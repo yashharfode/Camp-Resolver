@@ -5,7 +5,7 @@ import { EvaluatedComplaint } from '@/types/complaint';
 import { CategoryBadge } from './CategoryBadge';
 import { StatusBadge } from './StatusBadge';
 import { formatAge } from '@/utils/urgency';
-import { Flame, Clock, CheckCircle } from 'lucide-react';
+import { Flame, Clock, CheckCircle, ShieldAlert, Sparkles } from 'lucide-react';
 
 interface PriorityQueueProps {
   topComplaints: EvaluatedComplaint[];
@@ -19,7 +19,13 @@ export const PriorityQueue: React.FC<PriorityQueueProps> = ({
   totalUnresolvedCount,
   onViewDetails,
 }) => {
-  const getRankConfig = (rank: number) => {
+  const getRankConfig = (rank: number, isEmergency: boolean) => {
+    if (isEmergency) {
+      return {
+        rankBadge: 'bg-rose-600 text-white animate-pulse',
+        borderLeft: 'border-l-4 border-l-rose-600 bg-rose-50/30',
+      };
+    }
     switch (rank) {
       case 1:
         return {
@@ -52,7 +58,7 @@ export const PriorityQueue: React.FC<PriorityQueueProps> = ({
                 Unresolved Priority Queue
               </h3>
               <p className="text-xs text-slate-500 font-medium">
-                Top 3 complaints by urgency score
+                Ranked by AI Severity & Mathematical Urgency
               </p>
             </div>
           </div>
@@ -79,7 +85,9 @@ export const PriorityQueue: React.FC<PriorityQueueProps> = ({
           <div className="space-y-3">
             {topComplaints.map((complaint, index) => {
               const rank = index + 1;
-              const { rankBadge, borderLeft } = getRankConfig(rank);
+              const isEmergency =
+                complaint.effectivePriority === 'Emergency' || complaint.isEmergency;
+              const { rankBadge, borderLeft } = getRankConfig(rank, !!isEmergency);
 
               return (
                 <div
@@ -90,7 +98,7 @@ export const PriorityQueue: React.FC<PriorityQueueProps> = ({
                   {/* Top row */}
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     {/* Left: Rank, ID, and Category badge */}
-                    <div className="flex items-center gap-2.5 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span
                         className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${rankBadge}`}
                       >
@@ -100,12 +108,32 @@ export const PriorityQueue: React.FC<PriorityQueueProps> = ({
                         {complaint.id}
                       </span>
                       <CategoryBadge category={complaint.category} size="sm" />
+
+                      {/* Priority Tier Tag */}
+                      <span
+                        className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
+                          isEmergency
+                            ? 'bg-rose-600 text-white animate-pulse'
+                            : complaint.effectivePriority === 'Critical'
+                            ? 'bg-rose-100 text-rose-700'
+                            : complaint.effectivePriority === 'High'
+                            ? 'bg-orange-100 text-orange-700'
+                            : 'bg-amber-100 text-amber-700'
+                        }`}
+                      >
+                        {complaint.effectivePriority}
+                      </span>
                     </div>
 
                     {/* Right: Score pill, Age, and Status badge */}
                     <div className="flex items-center gap-2 flex-wrap text-xs">
                       {/* Urgency Score Pill */}
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#FFF1F2] text-[#E11D48] border border-[#FFE4E6]">
+                      <span
+                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#FFF1F2] text-[#E11D48] border border-[#FFE4E6]"
+                        title={`Mathematical Score: Base Weight (${complaint.categoryWeight}) + Age Factor (${Math.floor(
+                          complaint.ageInHours / 24
+                        )})`}
+                      >
                         <Flame className="w-3 h-3 text-[#E11D48]" />
                         <span>Score: {complaint.urgencyScore}</span>
                       </span>
@@ -121,11 +149,17 @@ export const PriorityQueue: React.FC<PriorityQueueProps> = ({
                     </div>
                   </div>
 
-                  {/* Bottom description */}
-                  <div className="sm:pl-8.5 mt-2">
-                    <p className="text-xs text-slate-600 font-medium line-clamp-1">
-                      {complaint.description}
+                  {/* Middle: Title & description */}
+                  <div className="sm:pl-8 mt-1.5">
+                    <p className="text-xs text-slate-800 font-semibold line-clamp-1">
+                      {complaint.title || complaint.description}
                     </p>
+                    {complaint.priorityExplanation && (
+                      <p className="text-[11px] text-teal-700 font-medium line-clamp-1 mt-0.5 flex items-center gap-1">
+                        <Sparkles className="w-3 h-3 text-[#007A78] shrink-0" />
+                        <span>{complaint.priorityExplanation}</span>
+                      </p>
+                    )}
                   </div>
                 </div>
               );

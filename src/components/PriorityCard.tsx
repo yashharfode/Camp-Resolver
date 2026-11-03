@@ -1,11 +1,11 @@
 'use client';
 
 import React from 'react';
-import { EvaluatedComplaint } from '@/types/complaint';
+import { EvaluatedComplaint, AIPriority, AISeverity } from '@/types/complaint';
 import { CategoryBadge } from './CategoryBadge';
 import { StatusBadge } from './StatusBadge';
 import { formatAge } from '@/utils/urgency';
-import { Clock, Flame, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Clock, Flame, ArrowRight, CheckCircle2, AlertTriangle, Sparkles, ShieldAlert } from 'lucide-react';
 
 interface PriorityCardProps {
   complaint: EvaluatedComplaint;
@@ -21,8 +21,12 @@ export const PriorityCard: React.FC<PriorityCardProps> = ({
   onViewDetails,
 }) => {
   const ageFactor = Math.floor(complaint.ageInHours / 24);
+  const isEmergency = complaint.effectivePriority === 'Emergency' || complaint.isEmergency;
 
   const getRankBadge = () => {
+    if (isEmergency) {
+      return 'bg-rose-600 text-white ring-4 ring-rose-200 animate-pulse';
+    }
     switch (rank) {
       case 1:
         return 'bg-rose-500 text-white ring-4 ring-rose-100';
@@ -35,8 +39,44 @@ export const PriorityCard: React.FC<PriorityCardProps> = ({
     }
   };
 
+  const getPriorityBadgeClass = (priority: AIPriority) => {
+    switch (priority) {
+      case 'Emergency':
+        return 'bg-rose-600 text-white font-black animate-pulse border-rose-700 shadow-xs';
+      case 'Critical':
+        return 'bg-rose-100 text-rose-800 border-rose-300 font-bold';
+      case 'High':
+        return 'bg-orange-100 text-orange-800 border-orange-300 font-bold';
+      case 'Medium':
+        return 'bg-amber-100 text-amber-800 border-amber-300 font-semibold';
+      case 'Low':
+      default:
+        return 'bg-slate-100 text-slate-700 border-slate-200 font-medium';
+    }
+  };
+
+  const getSeverityBadgeClass = (sev?: AISeverity) => {
+    switch (sev) {
+      case 'Critical':
+        return 'text-rose-700 bg-rose-50 border-rose-200';
+      case 'High':
+        return 'text-orange-700 bg-orange-50 border-orange-200';
+      case 'Medium':
+        return 'text-amber-700 bg-amber-50 border-amber-200';
+      case 'Low':
+      default:
+        return 'text-slate-600 bg-slate-50 border-slate-200';
+    }
+  };
+
   return (
-    <div className="relative bg-white rounded-xl border border-slate-200/90 p-5 shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+    <div
+      className={`relative bg-white rounded-2xl border p-5 shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col justify-between ${
+        isEmergency
+          ? 'border-rose-400 ring-2 ring-rose-400/30'
+          : 'border-slate-200/90'
+      }`}
+    >
       {/* Top row: Rank, ID, and Badges */}
       <div>
         <div className="flex items-center justify-between gap-2 mb-3">
@@ -52,10 +92,20 @@ export const PriorityCard: React.FC<PriorityCardProps> = ({
             <button
               type="button"
               onClick={() => onViewDetails(complaint)}
-              className="font-mono text-sm font-bold text-slate-900 hover:text-indigo-600 transition"
+              className="font-mono text-sm font-bold text-slate-900 hover:text-teal-700 transition"
             >
               {complaint.id}
             </button>
+
+            {/* Priority Tier Badge */}
+            <span
+              className={`text-[10px] uppercase px-2 py-0.5 rounded-md border tracking-wider flex items-center gap-1 ${getPriorityBadgeClass(
+                complaint.effectivePriority
+              )}`}
+            >
+              {isEmergency && <ShieldAlert className="w-3 h-3 text-white" />}
+              <span>{complaint.effectivePriority} Priority</span>
+            </span>
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap justify-end">
@@ -64,75 +114,95 @@ export const PriorityCard: React.FC<PriorityCardProps> = ({
           </div>
         </div>
 
-        {/* Description */}
-        <p className="text-sm font-medium text-slate-800 line-clamp-2 mt-2 leading-relaxed">
+        {/* Title or Description */}
+        <h4 className="text-sm font-bold text-slate-900 line-clamp-1">
+          {complaint.title || complaint.description}
+        </h4>
+        <p className="text-xs text-slate-600 line-clamp-2 mt-1 leading-relaxed">
           {complaint.description}
         </p>
+
+        {/* Location & Reporter info */}
+        {complaint.location && (
+          <p className="text-[11px] text-slate-400 mt-2 font-medium">
+            📍 {complaint.location}
+            {complaint.studentName ? ` • ${complaint.studentName}` : ''}
+          </p>
+        )}
       </div>
 
-      {/* Urgency breakdown & Age */}
+      {/* Rationale & Mathematical Urgency Section */}
       <div className="mt-4 pt-3.5 border-t border-slate-100 space-y-2.5">
-        <div className="flex items-center justify-between text-xs">
-          {/* Age */}
+        {/* Transparent Priority Explanation Pill */}
+        <div className="bg-teal-50/70 border border-teal-200/80 rounded-xl p-2 text-[11px] text-slate-700 flex items-start gap-1.5">
+          <Sparkles className="w-3.5 h-3.5 text-[#007A78] shrink-0 mt-0.5" />
+          <span className="leading-tight font-medium">
+            <strong className="text-[#007A78] font-bold">Priority Factor: </strong>
+            {complaint.priorityExplanation}
+          </span>
+        </div>
+
+        {/* Side-by-side metrics: Mathematical Urgency Score + AI Severity */}
+        <div className="grid grid-cols-2 gap-2 text-[11px]">
+          {/* Mathematical Urgency Score */}
+          <div className="bg-slate-50 border border-slate-200/70 rounded-lg px-2.5 py-1.5">
+            <span className="text-[10px] text-slate-400 block font-bold uppercase">
+              Math Urgency Score
+            </span>
+            <div className="flex items-center gap-1 font-mono font-bold text-slate-800 mt-0.5">
+              <Flame className="w-3 h-3 text-rose-500" />
+              <span>Score: {complaint.urgencyScore}</span>
+              <span className="text-[10px] text-slate-400 font-normal">
+                ({complaint.categoryWeight}+{ageFactor})
+              </span>
+            </div>
+          </div>
+
+          {/* AI Severity */}
+          <div className="bg-slate-50 border border-slate-200/70 rounded-lg px-2.5 py-1.5">
+            <span className="text-[10px] text-slate-400 block font-bold uppercase">
+              AI Detected Severity
+            </span>
+            <span
+              className={`inline-block mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold border ${getSeverityBadgeClass(
+                complaint.aiSeverity
+              )}`}
+            >
+              {complaint.aiSeverity || 'Standard'}
+            </span>
+          </div>
+        </div>
+
+        {/* Footer: Pending Age & Advance Button */}
+        <div className="flex items-center justify-between pt-1 text-xs">
           <span className="inline-flex items-center gap-1 text-slate-500 font-medium">
             <Clock className="w-3.5 h-3.5 text-slate-400" />
             <span>{formatAge(complaint.ageInHours)}</span>
             <span className="text-[11px] text-slate-400">({complaint.ageInHours}h)</span>
           </span>
 
-          {/* Urgency Score Pill */}
-          <span
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200"
-            title={`Base weight (${complaint.categoryWeight}) + floor(${complaint.ageInHours}h / 24) = ${complaint.urgencyScore}`}
-          >
-            <Flame className="w-3.5 h-3.5 text-rose-600" />
-            <span>Score: {complaint.urgencyScore}</span>
-          </span>
-        </div>
-
-        {/* Mathematical breakdown formula */}
-        <div className="bg-slate-50 rounded-md px-2.5 py-1 text-[11px] font-mono text-slate-500 flex items-center justify-between border border-slate-200/50">
-          <span>Formula:</span>
-          <span className="font-semibold text-slate-700">
-            {complaint.categoryWeight} (weight) + {ageFactor} (age/24) ={' '}
-            <strong className="text-rose-600">{complaint.urgencyScore}</strong>
-          </span>
-        </div>
-
-        {/* Action button */}
-        <div className="pt-1 flex items-center justify-between gap-2">
-          <button
-            type="button"
-            onClick={() => onViewDetails(complaint)}
-            className="text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
-          >
-            View Details
-          </button>
-
-          {complaint.status === 'Raised' && (
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
-              onClick={() => onAdvanceStatus(complaint.id)}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition active:scale-98"
+              onClick={() => onViewDetails(complaint)}
+              className="px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
             >
-              <span>Advance to In Progress</span>
-              <ArrowRight className="w-3 h-3" />
+              Details
             </button>
-          )}
 
-          {complaint.status === 'In Progress' && (
-            <button
-              type="button"
-              onClick={() => onAdvanceStatus(complaint.id)}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition active:scale-98"
-            >
-              <CheckCircle2 className="w-3 h-3" />
-              <span>Mark as Resolved</span>
-            </button>
-          )}
+            {complaint.status !== 'Resolved' && (
+              <button
+                type="button"
+                onClick={() => onAdvanceStatus(complaint.id)}
+                className="inline-flex items-center gap-1 px-3 py-1 text-xs font-bold text-white bg-[#007A78] hover:bg-[#005C5A] rounded-lg transition shadow-2xs cursor-pointer"
+              >
+                <span>{complaint.status === 'Raised' ? 'Assign' : 'Resolve'}</span>
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
 };
-

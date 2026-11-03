@@ -200,9 +200,16 @@ export const ComplaintTable: React.FC<ComplaintTableProps> = ({
 
                     {/* Description */}
                     <td className="px-4 py-4">
-                      <p className="text-xs text-slate-800 font-normal line-clamp-1 max-w-md">
-                        {c.description}
-                      </p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-xs text-slate-800 font-normal line-clamp-1 max-w-md">
+                          {c.description}
+                        </p>
+                        {c.isAnonymous && (
+                          <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded-full shrink-0">
+                            🔒 Anonymous
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     {/* Submitted */}

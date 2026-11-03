@@ -1,6 +1,6 @@
 import React from 'react';
 import { ComplaintCategory } from '@/types/complaint';
-import { Wifi, Home, BookOpen, FlaskConical, HelpCircle } from 'lucide-react';
+import { Wifi, Home, BookOpen, FlaskConical, HelpCircle, AlertTriangle } from 'lucide-react';
 
 interface CategoryBadgeProps {
   category: ComplaintCategory;
@@ -16,6 +16,11 @@ export const CategoryBadge: React.FC<CategoryBadgeProps> = ({
 }) => {
   const getCategoryDetails = () => {
     switch (category) {
+      case 'Emergency':
+        return {
+          icon: AlertTriangle,
+          bg: 'bg-rose-50 text-rose-700 border-rose-300 font-bold animate-pulse',
+        };
       case 'Laboratory':
         return {
           icon: FlaskConical,

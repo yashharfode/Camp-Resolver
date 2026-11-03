@@ -4,7 +4,8 @@ import { evaluateComplaint } from './urgency';
 
 /**
  * Generates and downloads a rich, multi-tab Microsoft Excel (.xlsx) workbook
- * containing all campus complaints, priority calculations, student identity, and an executive summary sheet.
+ * containing all campus complaints, AI intelligence classifications, emergency flags,
+ * mathematical urgency scores, student identity, and an executive summary sheet.
  */
 export function exportComplaintsToExcel(
   complaints: (Complaint | EvaluatedComplaint)[],
@@ -16,15 +17,21 @@ export function exportComplaintsToExcel(
   const evaluatedList: EvaluatedComplaint[] = complaints.map((c) =>
     'urgencyScore' in c && typeof c.urgencyScore === 'number'
       ? (c as EvaluatedComplaint)
-      : evaluateComplaint(c, currentTimestamp)
+      : evaluateComplaint(c, currentTimestamp, complaints as Complaint[])
   );
 
   // 1. Data rows for "All Complaints" Sheet
   const rows = evaluatedList.map((c) => ({
     'Complaint ID': c.id,
     'Category': c.category,
-    'Subject / Title': c.title || c.description,
-    'Description': c.description,
+    'Emergency Alert': c.isEmergency || c.category === 'Emergency' ? 'YES (CRITICAL)' : 'No',
+    'AI Severity': c.aiSeverity || 'Standard',
+    'Effective Priority': c.effectivePriority || `${c.urgencyTier} Priority`,
+    'Priority Override': c.priorityOverride || 'None',
+    'Issue Subject / Title': c.title || c.description,
+    'AI Problem Summary': c.aiSummary || 'Not Evaluated',
+    'AI Department': c.aiRecommendedDepartment || 'Campus Facilities',
+    'Priority Rationale': c.priorityExplanation || 'Formula calculation',
     'Campus Location': c.location || 'Campus Facilities',
     'Student Name': c.studentName || 'Anonymous / Pre-seeded',
     'Scholar Number': c.scholarNumber || 'N/A',
@@ -32,11 +39,11 @@ export function exportComplaintsToExcel(
     'GPS Geotag': c.gpsLocation || 'Not Attached',
     'Current Status': c.status,
     'Urgency Score': c.urgencyScore,
-    'Priority Tier': `${c.urgencyTier} Priority`,
     'Category Weight': c.categoryWeight,
     'Pending Age (Hours)': c.ageInHours,
     'Submitted At': new Date(c.submittedAt).toLocaleString(),
     'Resolved At': c.resolvedAt ? new Date(c.resolvedAt).toLocaleString() : 'Pending',
+    'Emergency Acknowledged': c.emergencyAcknowledged ? 'YES' : c.isEmergency ? 'NO' : 'N/A',
     'Admin Remarks / Notes': c.adminRemarks || 'No remarks recorded',
   }));
 
@@ -45,6 +52,7 @@ export function exportComplaintsToExcel(
   const pending = evaluatedList.filter((c) => c.status === 'Raised' || c.status === 'In Progress').length;
   const resolved = evaluatedList.filter((c) => c.status === 'Resolved').length;
   const highPriority = evaluatedList.filter((c) => (c.status === 'Raised' || c.status === 'In Progress') && c.urgencyScore >= 4).length;
+  const emergencies = evaluatedList.filter((c) => c.isEmergency || c.category === 'Emergency').length;
 
   const summaryData = [
     { Metric: 'Report Generated At', Value: new Date().toLocaleString() },
@@ -52,8 +60,10 @@ export function exportComplaintsToExcel(
     { Metric: 'Pending / In Progress Issues', Value: pending },
     { Metric: 'Resolved Complaints', Value: resolved },
     { Metric: 'High Priority (Urgency Score >= 4)', Value: highPriority },
+    { Metric: 'Critical Emergency Incidents', Value: emergencies },
     { Metric: '', Value: '' },
     { Metric: 'CATEGORY BREAKDOWN', Value: 'COUNT' },
+    { Metric: 'Emergency', Value: evaluatedList.filter((c) => c.category === 'Emergency').length },
     { Metric: 'Wi-Fi', Value: evaluatedList.filter((c) => c.category === 'Wi-Fi').length },
     { Metric: 'Hostel', Value: evaluatedList.filter((c) => c.category === 'Hostel').length },
     { Metric: 'Laboratory', Value: evaluatedList.filter((c) => c.category === 'Laboratory').length },
@@ -71,8 +81,14 @@ export function exportComplaintsToExcel(
   wsComplaints['!cols'] = [
     { wch: 14 }, // Complaint ID
     { wch: 14 }, // Category
-    { wch: 32 }, // Title
-    { wch: 45 }, // Description
+    { wch: 16 }, // Emergency
+    { wch: 14 }, // AI Severity
+    { wch: 18 }, // Effective Priority
+    { wch: 16 }, // Override
+    { wch: 30 }, // Title
+    { wch: 38 }, // AI Summary
+    { wch: 26 }, // AI Dept
+    { wch: 36 }, // Rationale
     { wch: 28 }, // Location
     { wch: 20 }, // Student Name
     { wch: 18 }, // Scholar No
@@ -80,15 +96,15 @@ export function exportComplaintsToExcel(
     { wch: 24 }, // GPS
     { wch: 14 }, // Status
     { wch: 14 }, // Urgency Score
-    { wch: 18 }, // Priority Tier
     { wch: 16 }, // Category Weight
     { wch: 20 }, // Age Hours
     { wch: 22 }, // Submitted At
     { wch: 22 }, // Resolved At
+    { wch: 22 }, // Emerg Ack
     { wch: 40 }, // Admin Remarks
   ];
 
-  wsSummary['!cols'] = [{ wch: 32 }, { wch: 24 }];
+  wsSummary['!cols'] = [{ wch: 34 }, { wch: 24 }];
 
   // Append sheets
   XLSX.utils.book_append_sheet(wb, wsComplaints, 'All Complaints');

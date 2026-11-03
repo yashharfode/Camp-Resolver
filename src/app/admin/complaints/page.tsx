@@ -7,6 +7,8 @@ import { evaluateComplaint } from '@/utils/urgency';
 import {
   subscribeToComplaints,
   updateComplaintStatusAndRemarks,
+  overrideComplaintPriority,
+  acknowledgeEmergencyComplaint,
   FirebaseConnectionStatus,
 } from '@/services/complaintService';
 import { AdminLoginGuard } from '@/components/AdminLoginGuard';
@@ -99,6 +101,28 @@ export default function AdminComplaintsPage() {
     setCurrentTimestamp(Date.now());
   };
 
+  const handleOverridePriority = async (id: string, priority: any) => {
+    const updated = await overrideComplaintPriority(id, priority);
+    setComplaints(updated);
+    if (selectedComplaint && selectedComplaint.id === id) {
+      const refreshed = updated.find((c) => c.id === id);
+      if (refreshed) {
+        setSelectedComplaint(evaluateComplaint(refreshed, currentTimestamp, updated));
+      }
+    }
+  };
+
+  const handleAcknowledgeEmergency = async (id: string) => {
+    const updated = await acknowledgeEmergencyComplaint(id, 'Administrator');
+    setComplaints(updated);
+    if (selectedComplaint && selectedComplaint.id === id) {
+      const refreshed = updated.find((c) => c.id === id);
+      if (refreshed) {
+        setSelectedComplaint(evaluateComplaint(refreshed, currentTimestamp, updated));
+      }
+    }
+  };
+
   const handleResetFilters = () => {
     setFilters({
       searchQuery: '',
@@ -146,6 +170,8 @@ export default function AdminComplaintsPage() {
             onClose={() => setSelectedComplaint(null)}
             onAdvanceStatus={handleAdvanceStatus}
             onUpdateStatusAndRemarks={handleUpdateStatusAndRemarks}
+            onOverridePriority={handleOverridePriority}
+            onAcknowledgeEmergency={handleAcknowledgeEmergency}
           />
         )}
 

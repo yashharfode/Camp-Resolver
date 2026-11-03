@@ -41,6 +41,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { href: '/admin', id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/admin/complaints', id: 'complaints', label: 'Complaints', icon: ClipboardList },
     { href: '/admin/priority-queue', id: 'priority-queue', label: 'Priority Queue', icon: Flame },
+    { href: '/admin/insights', id: 'insights', label: 'AI Insights', icon: Sparkles },
     { href: '/admin/analytics', id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { href: '/admin/settings', id: 'settings', label: 'Settings', icon: Settings },
   ];

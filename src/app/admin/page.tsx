@@ -23,6 +23,8 @@ import {
   subscribeToComplaints,
   updateComplaintStatusAndRemarks,
   resetDatabaseToSampleComplaints,
+  overrideComplaintPriority,
+  acknowledgeEmergencyComplaint,
   FirebaseConnectionStatus,
 } from '@/services/complaintService';
 
@@ -104,8 +106,37 @@ export default function AdminDashboardPage() {
     });
   };
 
+  const handleOpenComplaintById = (complaintId: string) => {
+    const found = complaints.find((c) => c.id === complaintId);
+    if (found) {
+      setSelectedComplaint(evaluateComplaint(found, currentTimestamp, complaints));
+    }
+  };
+
+  const handleOverridePriority = async (id: string, priority: any) => {
+    const updated = await overrideComplaintPriority(id, priority);
+    setComplaints(updated);
+    if (selectedComplaint && selectedComplaint.id === id) {
+      const refreshed = updated.find((c) => c.id === id);
+      if (refreshed) {
+        setSelectedComplaint(evaluateComplaint(refreshed, currentTimestamp, updated));
+      }
+    }
+  };
+
+  const handleAcknowledgeEmergency = async (id: string) => {
+    const updated = await acknowledgeEmergencyComplaint(id, 'Administrator');
+    setComplaints(updated);
+    if (selectedComplaint && selectedComplaint.id === id) {
+      const refreshed = updated.find((c) => c.id === id);
+      if (refreshed) {
+        setSelectedComplaint(evaluateComplaint(refreshed, currentTimestamp, updated));
+      }
+    }
+  };
+
   const evaluatedComplaints = useMemo(() => {
-    return complaints.map((c) => evaluateComplaint(c, currentTimestamp));
+    return complaints.map((c) => evaluateComplaint(c, currentTimestamp, complaints));
   }, [complaints, currentTimestamp]);
 
   const summaryStats = useMemo(() => {
@@ -182,6 +213,7 @@ export default function AdminDashboardPage() {
               onResetSampleData={handleResetSampleData}
               onOpenMobileMenu={() => setMobileMenuOpen(true)}
               connectionStatus={connectionStatus}
+              onViewComplaint={handleOpenComplaintById}
             />
 
             {/* Section 1: 4 Metric Cards */}
@@ -234,6 +266,8 @@ export default function AdminDashboardPage() {
             onClose={() => setSelectedComplaint(null)}
             onAdvanceStatus={handleAdvanceStatus}
             onUpdateStatusAndRemarks={handleUpdateStatusAndRemarks}
+            onOverridePriority={handleOverridePriority}
+            onAcknowledgeEmergency={handleAcknowledgeEmergency}
           />
         )}
 

@@ -97,10 +97,15 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({
             </div>
 
             {/* Large number */}
-            <div className="mt-3 relative z-10 pl-1">
+            <div className="mt-3 relative z-10 pl-1 flex items-baseline gap-2">
               <span className="text-3xl font-extrabold tracking-tight text-slate-900">
                 {card.value}
               </span>
+              {card.id === 'high-priority' && stats.emergencyCount && stats.emergencyCount > 0 ? (
+                <span className="text-[10px] font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded-full border border-rose-200 animate-pulse">
+                  {stats.emergencyCount} Emergency
+                </span>
+              ) : null}
             </div>
           </div>
         );

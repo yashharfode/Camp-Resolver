@@ -2,13 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { Complaint, ComplaintCategory, EvaluatedComplaint } from '@/types/complaint';
-import { CATEGORIES, CATEGORY_WEIGHTS } from '@/utils/constants';
+import { CATEGORIES } from '@/utils/constants';
 import { getStoredComplaints, generateNextComplaintId } from '@/utils/storage';
 import { evaluateComplaint, formatAge } from '@/utils/urgency';
 import {
   subscribeToComplaints,
   addComplaint,
+  updateComplaintAIAnalysis,
 } from '@/services/complaintService';
+import { createEmergencyNotification } from '@/services/notificationService';
 import { CategoryBadge } from '@/components/CategoryBadge';
 import { StatusBadge } from '@/components/StatusBadge';
 import { ChatbotWidget } from '@/components/ChatbotWidget';
@@ -35,10 +37,11 @@ import {
   Mail,
   GraduationCap,
   FileText,
-  MapPinOff,
-  ChevronRight,
-  ArrowRight,
-  HelpCircle as QuestionIcon,
+  AlertTriangle,
+  Flame,
+  ShieldAlert,
+  EyeOff,
+  Shield,
 } from 'lucide-react';
 
 export default function StudentPortalPage() {
@@ -50,9 +53,11 @@ export default function StudentPortalPage() {
   const [email, setEmail] = useState('');
   const [scholarNumber, setScholarNumber] = useState('');
   const [category, setCategory] = useState<ComplaintCategory>('Wi-Fi');
+  const [emergencyDetails, setEmergencyDetails] = useState('');
   const [title, setTitle] = useState('');
   const [location, setLocation] = useState('');
   const [description, setDescription] = useState('');
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const [gpsLocation, setGpsLocation] = useState<string | null>(null);
   const [isGettingGps, setIsGettingGps] = useState(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
@@ -81,6 +86,8 @@ export default function StudentPortalPage() {
 
   const getCategoryIcon = (cat: ComplaintCategory) => {
     switch (cat) {
+      case 'Emergency':
+        return AlertTriangle;
       case 'Laboratory':
         return FlaskConical;
       case 'Wi-Fi':
@@ -143,9 +150,9 @@ export default function StudentPortalPage() {
     }
 
     if (!email.trim()) {
-      errs.email = 'Email address is required.';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      errs.email = 'Please provide a valid email address.';
+      errs.email = 'Campus Email address is required.';
+    } else if (!/^[a-zA-Z0-9._%+-]+@satinengg\.in$/i.test(email.trim())) {
+      errs.email = 'Only official @satinengg.in campus email addresses are allowed (e.g. yourname@satinengg.in).';
     }
 
     if (!title.trim()) {
@@ -156,6 +163,15 @@ export default function StudentPortalPage() {
 
     if (!location.trim()) {
       errs.location = 'Campus Location (Block / Room) is required.';
+    }
+
+    if (category === 'Emergency') {
+      const trimmedEmerg = emergencyDetails.trim();
+      if (!trimmedEmerg) {
+        errs.emergencyDetails = 'Please describe the emergency situation.';
+      } else if (trimmedEmerg.length < 5) {
+        errs.emergencyDetails = 'Emergency description must be at least 5 characters.';
+      }
     }
 
     const trimmedDesc = description.trim();
@@ -171,7 +187,7 @@ export default function StudentPortalPage() {
     return Object.keys(errs).length === 0;
   };
 
-  // Submission
+  // Submission (Strictly Non-Blocking for AI)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting || !validateForm()) return;
@@ -181,6 +197,7 @@ export default function StudentPortalPage() {
     try {
       const newId = generateNextComplaintId(complaints);
       const nowStr = new Date().toISOString();
+      const isEmerg = category === 'Emergency';
 
       const newComplaint: Complaint = {
         id: newId,
@@ -195,22 +212,65 @@ export default function StudentPortalPage() {
         submittedAt: nowStr,
         createdAt: nowStr,
         status: 'Raised',
+        isAnonymous,
+        isEmergency: isEmerg,
+        emergencyDetails: isEmerg ? emergencyDetails.trim() : undefined,
+        aiSuggestedPriority: isEmerg ? 'Emergency' : undefined,
+        aiSeverity: isEmerg ? 'Critical' : undefined,
+        aiRecommendedDepartment: isEmerg ? 'Campus Security & Emergency Response' : undefined,
+        aiReviewStatus: 'pending',
         statusUpdates: [
           {
             status: 'Raised',
             timestamp: nowStr,
-            note: 'Complaint registered via Student Grievance Portal.',
+            note: isEmerg
+              ? 'EMERGENCY ALERT: Immediate response dispatched to Campus Security & Emergency Maintenance.'
+              : 'Complaint registered via Student Grievance Portal.',
           },
         ],
       };
 
+      // 1. Save immediately in Firebase & local storage (instant response for student)
       await addComplaint(newComplaint);
+
+      // 2. If emergency, immediately create notification in Firestore
+      if (isEmerg) {
+        createEmergencyNotification(newComplaint).catch((notifErr) =>
+          console.warn('Failed to publish emergency notification:', notifErr)
+        );
+      }
+
+      // 3. Fire-and-forget background AI analysis (never delays submission)
+      fetch('/api/analyze-complaint', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: newId,
+          category: newComplaint.category,
+          title: newComplaint.title,
+          description: newComplaint.description,
+          emergencyDetails: newComplaint.emergencyDetails,
+          location: newComplaint.location,
+          isEmergency: isEmerg,
+        }),
+      })
+        .then((res) => res.json())
+        .then((analysis) => {
+          if (analysis && analysis.summary) {
+            updateComplaintAIAnalysis(newId, analysis);
+          }
+        })
+        .catch((err) => {
+          console.warn('Background AI complaint analysis notice:', err);
+        });
 
       setSubmittedId(newId);
       // Reset fields
       setTitle('');
       setLocation('');
       setDescription('');
+      setEmergencyDetails('');
+      setIsAnonymous(false);
       setGpsLocation(null);
       setErrors({});
     } catch (err) {
@@ -240,7 +300,7 @@ export default function StudentPortalPage() {
     );
 
     if (found) {
-      setTrackedComplaint(evaluateComplaint(found));
+      setTrackedComplaint(evaluateComplaint(found, Date.now(), complaints));
     } else {
       setTrackedComplaint(null);
     }
@@ -291,7 +351,7 @@ export default function StudentPortalPage() {
             Campus Student Grievance Redressal
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-            Report facility issues across campus hostels, labs, Wi-Fi, or classrooms. Our campus administration actively reviews and resolves your complaints.
+            Report facility issues across campus hostels, labs, Wi-Fi, or classrooms. Our campus administration actively reviews and resolves your complaints with AI-powered prioritization.
           </p>
 
           {/* Tab Switcher: Register vs Track */}
@@ -300,7 +360,7 @@ export default function StudentPortalPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('register')}
-                className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+                className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 cursor-pointer ${
                   activeTab === 'register'
                     ? 'bg-white text-[#007A78] shadow-sm'
                     : 'text-slate-600 hover:text-slate-900'
@@ -312,7 +372,7 @@ export default function StudentPortalPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('track')}
-                className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+                className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 cursor-pointer ${
                   activeTab === 'track'
                     ? 'bg-white text-[#007A78] shadow-sm'
                     : 'text-slate-600 hover:text-slate-900'
@@ -337,7 +397,7 @@ export default function StudentPortalPage() {
                   Grievance Registered Successfully!
                 </h3>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Your complaint has been queued with automated urgency scoring. Save your tracking ID below:
+                  Your complaint has been queued with intelligent priority routing. Save your tracking ID below:
                 </p>
                 <div className="flex flex-wrap items-center gap-3 pt-2">
                   <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-xl font-mono text-sm font-bold text-[#007A78]">
@@ -345,7 +405,7 @@ export default function StudentPortalPage() {
                     <button
                       type="button"
                       onClick={() => copyToClipboard(submittedId)}
-                      className="text-slate-400 hover:text-slate-700 p-1"
+                      className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
                       title="Copy Tracking ID"
                     >
                       {copiedId ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
@@ -357,18 +417,16 @@ export default function StudentPortalPage() {
                       setSearchQuery(submittedId);
                       setActiveTab('track');
                       const found = complaints.find((c) => c.id === submittedId);
-                      if (found) setTrackedComplaint(evaluateComplaint(found));
-                      setSubmittedId(null);
+                      if (found) setTrackedComplaint(evaluateComplaint(found, Date.now(), complaints));
                     }}
-                    className="px-4 py-1.5 rounded-xl text-xs font-bold bg-[#007A78] text-white hover:bg-[#005C5A] transition flex items-center gap-1.5 shadow-xs"
+                    className="text-xs font-bold text-[#007A78] hover:underline px-2 py-1 cursor-pointer"
                   >
-                    <span>Track Status Now</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    Track this complaint →
                   </button>
                   <button
                     type="button"
                     onClick={() => setSubmittedId(null)}
-                    className="text-xs font-semibold text-slate-500 hover:text-slate-700 px-2 py-1"
+                    className="text-xs font-semibold text-slate-500 hover:text-slate-700 px-2 py-1 cursor-pointer"
                   >
                     Register Another
                   </button>
@@ -381,7 +439,6 @@ export default function StudentPortalPage() {
         {/* TAB 1: REGISTER COMPLAINT */}
         {activeTab === 'register' && (
           <div className="max-w-4xl mx-auto space-y-6">
-            {/* Form Column (Full Width Centered) */}
             <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xs space-y-6">
               <div className="border-b border-slate-100 pb-4">
                 <h2 className="text-lg font-bold text-slate-900">
@@ -445,14 +502,19 @@ export default function StudentPortalPage() {
 
                     {/* Email Address */}
                     <div className="sm:col-span-2 space-y-1.5">
-                      <label className="text-xs font-bold text-slate-700">
-                        Campus Email ID <span className="text-rose-500">*</span>
-                      </label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-slate-700">
+                          Campus Email ID <span className="text-rose-500">*</span>
+                        </label>
+                        <span className="text-[10px] font-semibold text-teal-700 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-md">
+                          Requires @satinengg.in
+                        </span>
+                      </div>
                       <input
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="e.g. aarav.sharma@campus.edu"
+                        placeholder="e.g. aarav.sharma@satinengg.in"
                         className={`w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 border rounded-xl focus:outline-none focus:ring-2 transition ${
                           errors.email
                             ? 'border-rose-400 focus:ring-rose-200'
@@ -463,10 +525,47 @@ export default function StudentPortalPage() {
                         <p className="text-[11px] text-rose-500 font-medium">{errors.email}</p>
                       )}
                     </div>
+
+                    {/* Anonymous Grievance Checkbox Option */}
+                    <div
+                      className={`sm:col-span-2 p-4 rounded-2xl border transition-all cursor-pointer select-none flex items-start gap-3.5 ${
+                        isAnonymous
+                          ? 'bg-gradient-to-r from-teal-50/90 to-indigo-50/70 border-teal-300 ring-2 ring-teal-500/20 shadow-xs'
+                          : 'bg-slate-50/90 border-slate-200 hover:bg-slate-100/70'
+                      }`}
+                      onClick={() => setIsAnonymous(!isAnonymous)}
+                    >
+                      <div className="pt-0.5">
+                        <input
+                          type="checkbox"
+                          id="anonymous-toggle"
+                          checked={isAnonymous}
+                          onChange={(e) => setIsAnonymous(e.target.checked)}
+                          className="w-4 h-4 text-[#007A78] rounded border-slate-300 focus:ring-[#007A78] cursor-pointer"
+                        />
+                      </div>
+                      <div className="space-y-1 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <label
+                            htmlFor="anonymous-toggle"
+                            className="text-xs font-bold text-slate-900 cursor-pointer flex items-center gap-1.5"
+                          >
+                            <EyeOff className="w-3.5 h-3.5 text-slate-600" />
+                            <span>Submit as Anonymous Grievance</span>
+                          </label>
+                          <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">
+                            Department Level Privacy Protection
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
+                          Your Name, Scholar ID, and Email are securely recorded for central admin verification, but strictly <strong>hidden and masked from department technicians and maintenance staff</strong>. Only the head administrator can view your identity.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Section B: Complaint Category Selection */}
+                {/* Section B: Complaint Category Selection (Includes Emergency) */}
                 <div className="space-y-2.5 pt-2 border-t border-slate-100">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-slate-700">
@@ -474,32 +573,49 @@ export default function StudentPortalPage() {
                     </label>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
                     {CATEGORIES.map((cat) => {
                       const Icon = getCategoryIcon(cat);
                       const isSelected = category === cat;
+                      const isCatEmerg = cat === 'Emergency';
 
                       return (
                         <button
                           key={cat}
                           type="button"
                           onClick={() => setCategory(cat)}
-                          className={`p-3.5 rounded-2xl border text-center flex flex-col items-center justify-center gap-2 transition-all cursor-pointer ${
+                          className={`p-3 rounded-2xl border text-center flex flex-col items-center justify-center gap-2 transition-all cursor-pointer ${
                             isSelected
-                              ? 'border-[#007A78] bg-[#E6FFFA]/50 shadow-xs ring-2 ring-[#007A78]/20'
+                              ? isCatEmerg
+                                ? 'border-rose-600 bg-rose-100/80 ring-2 ring-rose-500/30 shadow-xs'
+                                : 'border-[#007A78] bg-[#E6FFFA]/50 shadow-xs ring-2 ring-[#007A78]/20'
+                              : isCatEmerg
+                              ? 'border-rose-200 bg-rose-50/60 hover:bg-rose-100 hover:border-rose-400 text-rose-700'
                               : 'border-slate-200/90 bg-slate-50/50 hover:bg-slate-100 hover:border-slate-300'
                           }`}
                         >
                           <div
                             className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                              isSelected ? 'bg-[#007A78] text-white' : 'bg-slate-200/70 text-slate-600'
+                              isSelected
+                                ? isCatEmerg
+                                  ? 'bg-rose-600 text-white animate-pulse'
+                                  : 'bg-[#007A78] text-white'
+                                : isCatEmerg
+                                ? 'bg-rose-200/70 text-rose-700'
+                                : 'bg-slate-200/70 text-slate-600'
                             }`}
                           >
                             <Icon className="w-5 h-5" />
                           </div>
                           <span
                             className={`text-xs font-bold truncate ${
-                              isSelected ? 'text-[#007A78]' : 'text-slate-800'
+                              isSelected
+                                ? isCatEmerg
+                                  ? 'text-rose-800'
+                                  : 'text-[#007A78]'
+                                : isCatEmerg
+                                ? 'text-rose-700'
+                                : 'text-slate-800'
                             }`}
                           >
                             {cat}
@@ -509,6 +625,35 @@ export default function StudentPortalPage() {
                     })}
                   </div>
                 </div>
+
+                {/* Conditional Emergency Description Field (Required when Emergency is selected) */}
+                {category === 'Emergency' && (
+                  <div className="p-4 sm:p-5 bg-rose-50/90 rounded-2xl border-2 border-rose-300 space-y-2.5 animate-in fade-in duration-150">
+                    <div className="flex items-center gap-2 text-rose-800">
+                      <ShieldAlert className="w-4 h-4 text-rose-600 animate-bounce" />
+                      <label className="text-xs font-black uppercase tracking-wider text-rose-900">
+                        Describe the Emergency Situation <span className="text-rose-600">*</span>
+                      </label>
+                    </div>
+                    <p className="text-[11px] text-rose-700 leading-relaxed font-medium">
+                      Immediate campus emergencies include: fire or smoke, electrical sparks / exposed live wiring, serious water flooding, structural collapse hazards, or dangerous physical incidents.
+                    </p>
+                    <textarea
+                      value={emergencyDetails}
+                      onChange={(e) => setEmergencyDetails(e.target.value)}
+                      placeholder="e.g. Sparks and burning smell emitting from room 302 electrical board..."
+                      rows={3}
+                      className={`w-full px-3.5 py-2.5 text-xs bg-white border rounded-xl focus:outline-none focus:ring-2 font-medium text-slate-900 transition ${
+                        errors.emergencyDetails
+                          ? 'border-rose-500 focus:ring-rose-300'
+                          : 'border-rose-200 focus:ring-rose-400'
+                      }`}
+                    />
+                    {errors.emergencyDetails && (
+                      <p className="text-[11px] text-rose-600 font-bold">{errors.emergencyDetails}</p>
+                    )}
+                  </div>
+                )}
 
                 {/* Section C: Issue Specifics */}
                 <div className="space-y-4 pt-2 border-t border-slate-100">
@@ -583,7 +728,7 @@ export default function StudentPortalPage() {
                           <button
                             type="button"
                             onClick={handleClearGps}
-                            className="text-[11px] text-rose-600 hover:text-rose-800 font-semibold hover:underline"
+                            className="text-[11px] text-rose-600 hover:text-rose-800 font-semibold hover:underline cursor-pointer"
                           >
                             Remove
                           </button>
@@ -593,36 +738,34 @@ export default function StudentPortalPage() {
                           type="button"
                           onClick={handleFetchGps}
                           disabled={isGettingGps}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 transition shadow-2xs"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 transition shadow-2xs cursor-pointer"
                         >
                           <Compass className={`w-3.5 h-3.5 ${isGettingGps ? 'animate-spin text-[#007A78]' : 'text-slate-500'}`} />
                           <span>{isGettingGps ? 'Locating...' : 'Share Current GPS'}</span>
                         </button>
                       )}
                     </div>
-
                     {gpsError && (
                       <p className="text-[11px] text-amber-600 font-medium">{gpsError}</p>
                     )}
                   </div>
 
-                  {/* Description Textarea */}
+                  {/* Full Description */}
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-bold text-slate-700">
-                        Detailed Description <span className="text-rose-500">*</span>
+                        Detailed Description of the Grievance <span className="text-rose-500">*</span>
                       </label>
-                      <span className="text-[11px] text-slate-400 font-mono">
-                        {description.length} / 500
+                      <span className="text-[11px] text-slate-400">
+                        {description.length} / 500 characters
                       </span>
                     </div>
                     <textarea
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Please clearly explain the issue, how long it has been ongoing, and how it impacts your academic or residential experience..."
                       rows={4}
-                      maxLength={500}
-                      placeholder="Explain the issue thoroughly (e.g., when did it start, has it happened before, are multiple students impacted?)"
-                      className={`w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 border rounded-xl focus:outline-none focus:ring-2 transition leading-relaxed ${
+                      className={`w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 border rounded-xl focus:outline-none focus:ring-2 transition ${
                         errors.description
                           ? 'border-rose-400 focus:ring-rose-200'
                           : 'border-slate-200 focus:ring-[#007A78]/20 focus:border-[#007A78]'
@@ -634,64 +777,87 @@ export default function StudentPortalPage() {
                   </div>
                 </div>
 
-                {/* Form General Error */}
                 {errors.form && (
-                  <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-medium flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span>{errors.form}</span>
+                  <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-600 font-medium">
+                    {errors.form}
                   </div>
                 )}
 
-                {/* Submit Action */}
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full py-3.5 px-6 rounded-2xl font-bold text-sm bg-[#007A78] hover:bg-[#005C5A] text-white shadow-md shadow-teal-900/15 transition flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer"
-                >
-                  <Send className="w-4 h-4" />
-                  <span>{isSubmitting ? 'Submitting Grievance...' : 'Submit Campus Complaint'}</span>
-                </button>
+                {/* Submit Button */}
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className={`w-full py-3.5 px-6 rounded-2xl text-xs sm:text-sm font-bold text-white transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer ${
+                      category === 'Emergency'
+                        ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/20'
+                        : 'bg-[#007A78] hover:bg-[#005C5A] shadow-[#007A78]/20'
+                    } disabled:opacity-60`}
+                  >
+                    <Send className="w-4 h-4" />
+                    <span>
+                      {isSubmitting
+                        ? 'Logging Complaint in Real-time...'
+                        : category === 'Emergency'
+                        ? 'Submit Critical Emergency Complaint'
+                        : 'Submit Complaint to Campus Desk'}
+                    </span>
+                  </button>
+                  <p className="text-center text-[11px] text-slate-400 mt-2 font-medium">
+                    Your grievance is analyzed by AI intelligence and dispatched to responsible campus officers immediately.
+                  </p>
+                </div>
               </form>
             </div>
 
-            {/* Resolution Workflow (At the very bottom across full width) */}
-            <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs space-y-4">
-              <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#007A78]" />
-                <span>Resolution Workflow</span>
-              </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                <div className="flex items-start gap-3 p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
-                  <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-700 font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">
+            {/* Resolution Workflow - Preserved at the very bottom */}
+            <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-7 shadow-xs">
+              <div className="text-center max-w-md mx-auto mb-6">
+                <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                  Transparent Resolution Workflow
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Every campus grievance follows a verified 3-stage progression from initial registration to verified resolution.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Stage 1 */}
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-3.5">
+                  <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-700 font-bold text-xs flex items-center justify-center shrink-0">
                     1
-                  </span>
-                  <div>
-                    <strong className="text-slate-800 block font-bold text-xs sm:text-sm">Raised</strong>
-                    <span className="text-slate-500 text-[11px] leading-relaxed block mt-0.5">
-                      Logged in system and queued for relevant department.
-                    </span>
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-bold text-slate-900">1. Raised</h4>
+                    <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
+                      Logged in system and queued for relevant department with initial urgency calculation.
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-start gap-3 p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
-                  <span className="w-6 h-6 rounded-full bg-sky-100 text-sky-700 font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">
+
+                {/* Stage 2 */}
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-3.5">
+                  <div className="w-8 h-8 rounded-xl bg-sky-100 text-sky-700 font-bold text-xs flex items-center justify-center shrink-0">
                     2
-                  </span>
-                  <div>
-                    <strong className="text-slate-800 block font-bold text-xs sm:text-sm">In Progress</strong>
-                    <span className="text-slate-500 text-[11px] leading-relaxed block mt-0.5">
-                      Assigned to technician, plumber, electrician, or IT team.
-                    </span>
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-bold text-slate-900">2. In Progress</h4>
+                    <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
+                      Assigned to campus technician, plumber, electrician, AV, or IT maintenance team.
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-start gap-3 p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
-                  <span className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">
+
+                {/* Stage 3 */}
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-3.5">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 font-bold text-xs flex items-center justify-center shrink-0">
                     3
-                  </span>
-                  <div>
-                    <strong className="text-slate-800 block font-bold text-xs sm:text-sm">Resolved</strong>
-                    <span className="text-slate-500 text-[11px] leading-relaxed block mt-0.5">
-                      Work verified and ticket successfully closed.
-                    </span>
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-bold text-slate-900">3. Resolved</h4>
+                    <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
+                      Work verified and ticket successfully closed by campus administration.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -699,83 +865,121 @@ export default function StudentPortalPage() {
           </div>
         )}
 
-        {/* TAB 2: TRACK STATUS & TIMELINE */}
+        {/* TAB 2: TRACK STATUS */}
         {activeTab === 'track' && (
           <div className="max-w-3xl mx-auto space-y-6">
             {/* Search Box */}
-            <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xs space-y-4">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">
-                  Track Your Complaint Status
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Enter your Complaint ID (e.g. C01, C03), Scholar Number, or Registered Email to view real-time progress.
-                </p>
-              </div>
-
-              <form onSubmit={handleTrackSearch} className="flex flex-col sm:flex-row gap-2.5">
+            <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-7 shadow-xs space-y-4">
+              <h2 className="text-base font-bold text-slate-900">
+                Track Live Complaint Status
+              </h2>
+              <form onSubmit={handleTrackSearch} className="flex gap-2">
                 <div className="relative flex-1">
                   <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Enter Complaint ID (C01) or Scholar No (SCH2024-...)"
-                    className="w-full pl-10 pr-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#007A78]/20 focus:border-[#007A78] transition font-medium"
+                    placeholder="Enter Complaint ID (e.g. C01) or Scholar Number..."
+                    className="w-full pl-9 pr-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#007A78]/20 focus:border-[#007A78] transition font-medium"
                   />
                 </div>
                 <button
                   type="submit"
-                  className="px-6 py-3 rounded-2xl font-bold text-sm bg-[#007A78] text-white hover:bg-[#005C5A] transition shadow-xs flex items-center justify-center gap-2"
+                  className="px-5 py-2.5 bg-[#007A78] hover:bg-[#005C5A] text-white text-xs sm:text-sm font-bold rounded-xl transition shadow-xs cursor-pointer"
                 >
-                  <Search className="w-4 h-4" />
-                  <span>Check Status</span>
+                  Track
                 </button>
               </form>
             </div>
 
-            {/* Track Result Card */}
+            {/* Tracked Complaint Result Card */}
             {trackedComplaint ? (
-              <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-sm space-y-6 animate-in fade-in duration-150">
-                {/* Result Header */}
+              <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xs space-y-5 animate-in fade-in duration-200">
+                {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-base font-black text-[#007A78]">
-                        {trackedComplaint.id}
-                      </span>
-                      <CategoryBadge category={trackedComplaint.category} />
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <span className="font-mono text-base font-bold text-slate-900 bg-slate-100 px-3 py-1 rounded-xl border border-slate-200">
+                      {trackedComplaint.id}
+                    </span>
+                    <CategoryBadge category={trackedComplaint.category} size="md" />
+                    <StatusBadge status={trackedComplaint.status} size="md" />
+                  </div>
+
+                  <span className="text-xs text-slate-400 font-medium">
+                    Submitted: {new Date(trackedComplaint.submittedAt).toLocaleDateString()}
+                  </span>
+                </div>
+
+                {/* Emergency banner on tracking if applicable */}
+                {trackedComplaint.isEmergency && (
+                  <div className="p-3 bg-rose-50 border border-rose-300 rounded-xl flex items-center gap-2 text-xs font-bold text-rose-800">
+                    <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span>
+                      Flagged as Critical Campus Emergency:{' '}
+                      {trackedComplaint.emergencyDetails || trackedComplaint.description}
+                    </span>
+                  </div>
+                )}
+
+                {/* Anonymous Banner if applicable */}
+                {trackedComplaint.isAnonymous && (
+                  <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl flex items-center gap-2 text-xs font-medium text-indigo-900">
+                    <EyeOff className="w-4 h-4 text-indigo-600 shrink-0" />
+                    <span>
+                      <strong>Anonymous Grievance:</strong> Your student identity is shielded from department staff. Only central administration can inspect your profile.
+                    </span>
+                  </div>
+                )}
+
+                {/* AI Summary on Tracking if available */}
+                {trackedComplaint.aiSummary && (
+                  <div className="p-3.5 bg-teal-50/70 border border-teal-200/80 rounded-2xl text-xs space-y-1">
+                    <div className="flex items-center gap-1.5 font-bold text-[#007A78]">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>AI Grievance Assessment</span>
                     </div>
-                    <h3 className="text-base font-bold text-slate-900 mt-1">
-                      {trackedComplaint.title || trackedComplaint.description}
-                    </h3>
-                    {trackedComplaint.location && (
-                      <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{trackedComplaint.location}</span>
+                    <p className="text-slate-700 font-medium">
+                      {trackedComplaint.aiSummary}
+                    </p>
+                    {trackedComplaint.aiRecommendedDepartment && (
+                      <p className="text-[11px] text-slate-500">
+                        Assigned Desk: <strong>{trackedComplaint.aiRecommendedDepartment}</strong>
                       </p>
                     )}
                   </div>
-                  <div className="shrink-0 flex items-center gap-2">
-                    <StatusBadge status={trackedComplaint.status} />
-                  </div>
+                )}
+
+                {/* Title & Description */}
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    {trackedComplaint.title || trackedComplaint.description}
+                  </h3>
+                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                    {trackedComplaint.description}
+                  </p>
+                  {trackedComplaint.location && (
+                    <p className="text-xs text-slate-500 mt-2 font-medium">
+                      📍 {trackedComplaint.location}
+                    </p>
+                  )}
                 </div>
 
-                {/* Status Stepper / Progress Bar */}
-                <div className="space-y-3">
-                  <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
-                    Resolution Lifecycle
-                  </h4>
+                {/* Visual 3-Stage Progress Tracker */}
+                <div className="space-y-3 pt-2 border-t border-slate-100">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-slate-400 block">
+                    Live Stage Progression
+                  </span>
 
-                  <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center">
+                  <div className="grid grid-cols-3 gap-2 text-center">
                     {/* Step 1: Raised */}
                     <div className="space-y-1.5">
                       <div className="h-2 rounded-full bg-emerald-500" />
-                      <div className="flex items-center justify-center gap-1 text-xs font-bold text-slate-800">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <div className="flex items-center justify-center gap-1 text-xs font-bold text-emerald-700">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
                         <span>Raised</span>
                       </div>
-                      <span className="text-[10px] text-slate-400 block font-medium">Logged & Queued</span>
+                      <span className="text-[10px] text-slate-400 block font-medium">Logged in System</span>
                     </div>
 
                     {/* Step 2: In Progress */}
@@ -783,20 +987,18 @@ export default function StudentPortalPage() {
                       <div
                         className={`h-2 rounded-full ${
                           trackedComplaint.status === 'In Progress' || trackedComplaint.status === 'Resolved'
-                            ? 'bg-sky-500'
+                            ? 'bg-emerald-500'
                             : 'bg-slate-200'
                         }`}
                       />
                       <div
                         className={`flex items-center justify-center gap-1 text-xs font-bold ${
                           trackedComplaint.status === 'In Progress' || trackedComplaint.status === 'Resolved'
-                            ? 'text-sky-700'
+                            ? 'text-emerald-700'
                             : 'text-slate-400'
                         }`}
                       >
-                        {trackedComplaint.status === 'In Progress' ? (
-                          <Clock className="w-3.5 h-3.5 animate-spin" />
-                        ) : trackedComplaint.status === 'Resolved' ? (
+                        {trackedComplaint.status === 'In Progress' || trackedComplaint.status === 'Resolved' ? (
                           <CheckCircle2 className="w-3.5 h-3.5 text-sky-600" />
                         ) : (
                           <span className="w-3.5 h-3.5 rounded-full border border-slate-300" />
@@ -855,14 +1057,14 @@ export default function StudentPortalPage() {
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                     <span className="text-slate-400 text-[11px] block font-medium">Priority Level</span>
                     <strong className="text-[#007A78] text-sm mt-0.5 block">
-                      {trackedComplaint.urgencyTier} Priority
+                      {trackedComplaint.effectivePriority} Priority
                     </strong>
                   </div>
 
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                     <span className="text-slate-400 text-[11px] block font-medium">Scholar ID</span>
                     <strong className="text-slate-800 text-xs mt-0.5 block truncate">
-                      {trackedComplaint.scholarNumber || 'Anonymous / Pre-seeded'}
+                      {trackedComplaint.scholarNumber || 'N/A'}
                     </strong>
                   </div>
 
