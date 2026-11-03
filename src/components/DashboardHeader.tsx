@@ -1,16 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Database, Menu, RotateCcw, Check } from 'lucide-react';
+import { Database, Menu, RotateCcw, Check, Flame } from 'lucide-react';
+import { FirebaseConnectionStatus } from '@/services/complaintService';
 
 interface DashboardHeaderProps {
   onResetSampleData: () => void;
   onOpenMobileMenu: () => void;
+  connectionStatus: FirebaseConnectionStatus;
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onResetSampleData,
   onOpenMobileMenu,
+  connectionStatus,
 }) => {
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [justReset, setJustReset] = useState(false);
@@ -20,6 +23,44 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     setResetConfirmOpen(false);
     setJustReset(true);
     setTimeout(() => setJustReset(false), 2500);
+  };
+
+  const renderConnectionPill = () => {
+    switch (connectionStatus) {
+      case 'connected':
+        return (
+          <div
+            className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-[#16A34A] bg-[#EBFBF4] border border-[#DCFCE7] rounded-full shadow-2xs cursor-default"
+            title="Connected to Firebase Firestore (Realtime sync enabled)"
+          >
+            <Database className="w-3.5 h-3.5 text-[#16A34A]" />
+            <span>Firebase Connected</span>
+            <span className="h-2 w-2 rounded-full bg-[#22C55E] animate-pulse" />
+          </div>
+        );
+      case 'connecting':
+        return (
+          <div
+            className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full shadow-2xs cursor-default"
+            title="Connecting to Firebase Firestore..."
+          >
+            <Database className="w-3.5 h-3.5 text-amber-600 animate-spin" />
+            <span>Connecting Firebase...</span>
+          </div>
+        );
+      case 'fallback':
+      default:
+        return (
+          <div
+            className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-[#16A34A] bg-[#EBFBF4] border border-[#DCFCE7] rounded-full shadow-2xs cursor-default"
+            title="Storage active in browser LocalStorage"
+          >
+            <Database className="w-3.5 h-3.5 text-[#16A34A]" />
+            <span>Local Storage Active</span>
+            <span className="h-2 w-2 rounded-full bg-[#22C55E]" />
+          </div>
+        );
+    }
   };
 
   return (
@@ -50,15 +91,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             CODE CRACK 3.0
           </span>
 
-          {/* Local Storage Active Pill */}
-          <div
-            className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-[#16A34A] bg-[#EBFBF4] border border-[#DCFCE7] rounded-full shadow-2xs cursor-default"
-            title="HTML5 LocalStorage active in browser"
-          >
-            <Database className="w-3.5 h-3.5 text-[#16A34A]" />
-            <span>Local Storage Active</span>
-            <span className="h-2 w-2 rounded-full bg-[#22C55E]" />
-          </div>
+          {/* Database Connection Pill */}
+          {renderConnectionPill()}
 
           {/* Reset Sample Records Button */}
           <button
