@@ -2,19 +2,18 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Database, Menu, RotateCcw, Check, GraduationCap, ArrowRight } from 'lucide-react';
+import { Menu, RotateCcw, Check, GraduationCap, ArrowRight } from 'lucide-react';
 import { FirebaseConnectionStatus } from '@/services/complaintService';
 
 interface DashboardHeaderProps {
   onResetSampleData: () => void;
   onOpenMobileMenu: () => void;
-  connectionStatus: FirebaseConnectionStatus;
+  connectionStatus?: FirebaseConnectionStatus;
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onResetSampleData,
   onOpenMobileMenu,
-  connectionStatus,
 }) => {
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [justReset, setJustReset] = useState(false);
@@ -24,44 +23,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     setResetConfirmOpen(false);
     setJustReset(true);
     setTimeout(() => setJustReset(false), 2500);
-  };
-
-  const renderConnectionPill = () => {
-    switch (connectionStatus) {
-      case 'connected':
-        return (
-          <div
-            className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-[#0F766E] bg-[#F0FDFA] border border-[#99F6E4] rounded-full shadow-2xs cursor-default"
-            title="Connected to Firebase Firestore"
-          >
-            <Database className="w-3.5 h-3.5 text-[#0D9488]" />
-            <span>Firebase Connected</span>
-            <span className="h-2 w-2 rounded-full bg-[#14B8A6] animate-pulse" />
-          </div>
-        );
-      case 'connecting':
-        return (
-          <div
-            className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full shadow-2xs cursor-default"
-            title="Connecting to Firebase..."
-          >
-            <Database className="w-3.5 h-3.5 text-amber-600 animate-spin" />
-            <span>Connecting...</span>
-          </div>
-        );
-      case 'fallback':
-      default:
-        return (
-          <div
-            className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-[#0F766E] bg-[#F0FDFA] border border-[#99F6E4] rounded-full shadow-2xs cursor-default"
-            title="Offline Local Storage active"
-          >
-            <Database className="w-3.5 h-3.5 text-[#0D9488]" />
-            <span>Local Storage Active</span>
-            <span className="h-2 w-2 rounded-full bg-[#14B8A6]" />
-          </div>
-        );
-    }
   };
 
   return (
@@ -90,7 +51,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           {/* Student Portal Switcher Link */}
           <Link
             href="/student"
-            className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-[#007A78] hover:text-white bg-[#F0FDFA] hover:bg-[#007A78] border border-[#99F6E4] rounded-full transition shadow-2xs"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-[#007A78] hover:text-white bg-[#F0FDFA] hover:bg-[#007A78] border border-[#99F6E4] rounded-full transition shadow-2xs"
             title="Open Student Complaint Portal"
           >
             <GraduationCap className="w-3.5 h-3.5" />
@@ -98,28 +59,20 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             <ArrowRight className="w-3 h-3" />
           </Link>
 
-          {/* CODE CRACK 3.0 Badge */}
-          <span className="inline-flex items-center px-3.5 py-1 text-xs font-semibold bg-[#F0FDFA] text-[#0F766E] border border-[#99F6E4] rounded-full shadow-2xs">
-            CODE CRACK 3.0
-          </span>
-
-          {/* Database Connection Pill */}
-          {renderConnectionPill()}
-
           {/* Reset Sample Records Button */}
           <button
             onClick={() => setResetConfirmOpen(true)}
-            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-500 hover:text-slate-800 bg-white hover:bg-slate-50 border border-slate-200 rounded-full shadow-2xs transition"
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-800 bg-white hover:bg-slate-50 border border-slate-200 rounded-full shadow-2xs transition"
             title="Reset to sample dataset C01 - C04"
           >
             {justReset ? (
               <>
-                <Check className="w-3 h-3 text-teal-600" />
+                <Check className="w-3.5 h-3.5 text-teal-600" />
                 <span className="text-teal-700 font-semibold">Reset Done</span>
               </>
             ) : (
               <>
-                <RotateCcw className="w-3 h-3 text-slate-400" />
+                <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
                 <span>Reset Data</span>
               </>
             )}
