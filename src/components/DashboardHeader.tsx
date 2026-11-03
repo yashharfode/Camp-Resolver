@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Database, Menu, RotateCcw, Check } from 'lucide-react';
+import Link from 'next/link';
+import { Database, Menu, RotateCcw, Check, GraduationCap, ArrowRight } from 'lucide-react';
 import { FirebaseConnectionStatus } from '@/services/complaintService';
 
 interface DashboardHeaderProps {
@@ -86,6 +87,17 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
         {/* Right Badges & Controls */}
         <div className="flex items-center gap-2.5 flex-wrap">
+          {/* Student Portal Switcher Link */}
+          <Link
+            href="/student"
+            className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-[#007A78] hover:text-white bg-[#F0FDFA] hover:bg-[#007A78] border border-[#99F6E4] rounded-full transition shadow-2xs"
+            title="Open Student Complaint Portal"
+          >
+            <GraduationCap className="w-3.5 h-3.5" />
+            <span>Student Portal</span>
+            <ArrowRight className="w-3 h-3" />
+          </Link>
+
           {/* CODE CRACK 3.0 Badge */}
           <span className="inline-flex items-center px-3.5 py-1 text-xs font-semibold bg-[#F0FDFA] text-[#0F766E] border border-[#99F6E4] rounded-full shadow-2xs">
             CODE CRACK 3.0

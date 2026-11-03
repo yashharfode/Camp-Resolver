@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import {
   LayoutDashboard,
   ClipboardList,
@@ -9,6 +10,7 @@ import {
   X,
   Layers,
   Sparkles,
+  GraduationCap,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -29,11 +31,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenChatbot,
 }) => {
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'complaints', label: 'Complaints', icon: ClipboardList },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+    { id: 'dashboard', label: 'Admin Dashboard', icon: LayoutDashboard },
+    { id: 'complaints', label: 'All Complaints', icon: ClipboardList },
+    { id: 'analytics', label: 'Priority Analytics', icon: BarChart3 },
+    { id: 'student-portal', label: 'Student Portal', icon: GraduationCap, isLink: true, href: '/student' },
     { id: 'ai-assistant', label: 'AI Assistant', icon: Sparkles, isAction: true },
-    { id: 'about', label: 'About', icon: Info },
+    { id: 'about', label: 'How It Works', icon: Info },
   ];
 
   const handleNavClick = (item: { id: string; label: string; icon: any; isAction?: boolean }) => {
@@ -91,6 +94,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
+
+            if (item.isLink && item.href) {
+              return (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:text-[#007A78] hover:bg-[#F0FDFA] transition-all duration-150 group"
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className="w-4.5 h-4.5 text-slate-400 group-hover:text-[#007A78]" />
+                    <span>{item.label}</span>
+                  </div>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#E6FFFA] text-[#007A78]">
+                    Portal ↗
+                  </span>
+                </Link>
+              );
+            }
 
             return (
               <button

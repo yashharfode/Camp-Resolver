@@ -40,7 +40,7 @@ export const ChatbotWidget: React.FC = () => {
       role: 'assistant',
       content:
         '👋 Hello! I am **Grivex AI**, your Campus Complaint & Priority Assistant. Ask me about campus issue rules, urgency calculations, category weights, or help drafting a detailed complaint description!',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: 'Just now',
     },
   ]);
   const [input, setInput] = useState('');
@@ -67,7 +67,7 @@ export const ChatbotWidget: React.FC = () => {
       id: `user-${Date.now()}`,
       role: 'user',
       content: textToSend,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: 'Just now',
     };
 
     setMessages((prev) => [...prev, userMsg]);
@@ -100,7 +100,7 @@ export const ChatbotWidget: React.FC = () => {
           role: 'assistant',
           content: data.text,
           modelUsed: shortModelName,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          timestamp: 'Just now',
         };
         setMessages((prev) => [...prev, aiMsg]);
       } else {
@@ -108,7 +108,7 @@ export const ChatbotWidget: React.FC = () => {
           id: `err-${Date.now()}`,
           role: 'assistant',
           content: `⚠️ ${data.error || 'Unable to connect to AI models at this moment. Please try again shortly.'}`,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          timestamp: 'Just now',
         };
         setMessages((prev) => [...prev, errorMsg]);
       }
@@ -117,7 +117,7 @@ export const ChatbotWidget: React.FC = () => {
         id: `err-${Date.now()}`,
         role: 'assistant',
         content: '⚠️ Network connection error. Please verify your internet connection and try again.',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: 'Just now',
       };
       setMessages((prev) => [...prev, errorMsg]);
     } finally {
@@ -131,7 +131,7 @@ export const ChatbotWidget: React.FC = () => {
         id: 'welcome-reset',
         role: 'assistant',
         content: 'Chat cleared. How can I assist you with campus complaints today?',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: 'Just now',
       },
     ]);
   };
