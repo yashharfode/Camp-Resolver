@@ -18,23 +18,23 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
     switch (status) {
       case 'Raised':
         return {
-          container: 'bg-orange-50 text-orange-700 border-orange-200/80',
-          dot: 'bg-orange-500',
+          container: 'bg-[#FFF7ED] text-[#C2410C] border-[#FFEDD5]',
+          dot: 'bg-[#F97316]',
         };
       case 'In Progress':
         return {
-          container: 'bg-blue-50 text-blue-700 border-blue-200/80',
-          dot: 'bg-blue-500',
+          container: 'bg-[#EFF6FF] text-[#1D4ED8] border-[#DBEAFE]',
+          dot: 'bg-[#3B82F6]',
         };
       case 'Resolved':
         return {
-          container: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
-          dot: 'bg-emerald-500',
+          container: 'bg-[#F0FDF4] text-[#15803D] border-[#DCFCE7]',
+          dot: 'bg-[#22C55E]',
         };
       case 'High Priority':
         return {
-          container: 'bg-rose-50 text-rose-700 border-rose-200/80',
-          dot: 'bg-rose-500',
+          container: 'bg-[#FFF1F2] text-[#BE123C] border-[#FFE4E6]',
+          dot: 'bg-[#E11D48]',
         };
       default:
         return {
@@ -47,7 +47,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
   const styles = getStyles();
   const sizeClasses =
     size === 'sm'
-      ? 'px-2 py-0.5 text-xs font-medium'
+      ? 'px-2 py-0.5 text-xs font-semibold'
       : 'px-2.5 py-1 text-xs font-semibold';
 
   return (

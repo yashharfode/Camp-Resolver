@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { SummaryStats, ComplaintStatus } from '@/types/complaint';
-import { ClipboardList, Clock, CheckCircle2, Flame, ArrowUpRight } from 'lucide-react';
+import { ClipboardList, Clock, CheckCircle2, Flame } from 'lucide-react';
 
 interface SummaryCardsProps {
   stats: SummaryStats;
@@ -22,37 +22,31 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({
       value: stats.total,
       description: 'All recorded campus issues',
       icon: ClipboardList,
-      accent: 'text-indigo-600',
-      badgeBg: 'bg-indigo-50 text-indigo-700 border-indigo-200/80',
-      iconBg: 'bg-indigo-50 text-indigo-600 border-indigo-100',
-      activeFilter: currentStatusFilter === 'ALL',
+      iconBox: 'bg-[#ECE9FE] text-[#6366F1]',
+      waveColor: 'fill-[#ECE9FE]/50',
+      active: currentStatusFilter === 'ALL',
       onClick: () => onFilterByStatus?.('ALL'),
     },
     {
       id: 'pending',
       title: 'Pending Complaints',
       value: stats.pending,
-      description: 'Active Raised & In Progress issues',
+      description: 'Raised & In Progress',
       icon: Clock,
-      accent: 'text-orange-600',
-      badgeBg: 'bg-orange-50 text-orange-700 border-orange-200/80',
-      iconBg: 'bg-orange-50 text-orange-600 border-orange-100',
-      activeFilter: false,
-      onClick: () => {
-        // Can filter to Raised
-        onFilterByStatus?.('Raised');
-      },
+      iconBox: 'bg-[#FFF7ED] text-[#F97316]',
+      waveColor: 'fill-[#FFEDD5]/50',
+      active: false,
+      onClick: () => onFilterByStatus?.('Raised'),
     },
     {
       id: 'resolved',
       title: 'Resolved Complaints',
       value: stats.resolved,
-      description: 'Successfully addressed issues',
+      description: 'Successfully addressed',
       icon: CheckCircle2,
-      accent: 'text-emerald-600',
-      badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
-      iconBg: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-      activeFilter: currentStatusFilter === 'Resolved',
+      iconBox: 'bg-[#F0FDF4] text-[#16A34A]',
+      waveColor: 'fill-[#DCFCE7]/50',
+      active: currentStatusFilter === 'Resolved',
       onClick: () => onFilterByStatus?.('Resolved'),
     },
     {
@@ -61,10 +55,9 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({
       value: stats.highPriority,
       description: 'Urgency Score ≥ 4 (Unresolved)',
       icon: Flame,
-      accent: 'text-rose-600',
-      badgeBg: 'bg-rose-50 text-rose-700 border-rose-200/80',
-      iconBg: 'bg-rose-50 text-rose-600 border-rose-100',
-      activeFilter: false,
+      iconBox: 'bg-[#FFF1F2] text-[#E11D48]',
+      waveColor: 'fill-[#FFE4E6]/50',
+      active: false,
       onClick: undefined,
     },
   ];
@@ -77,39 +70,48 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({
           <div
             key={card.id}
             onClick={card.onClick}
-            className={`relative bg-white rounded-xl border p-5 transition-all duration-200 ${
+            className={`relative bg-white rounded-2xl border p-5 transition-all duration-200 overflow-hidden ${
               card.onClick ? 'cursor-pointer hover:border-slate-300 hover:shadow-md' : ''
             } ${
-              card.activeFilter
-                ? 'ring-2 ring-indigo-500/30 border-indigo-400'
-                : 'border-slate-200/80 shadow-2xs'
+              card.active
+                ? 'ring-2 ring-indigo-500/20 border-indigo-400 shadow-xs'
+                : 'border-slate-200/80 shadow-xs'
             }`}
           >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 tracking-wider uppercase">
-                {card.title}
-              </span>
-              <div
-                className={`w-9 h-9 rounded-lg flex items-center justify-center border ${card.iconBg}`}
-              >
-                <Icon className="w-4 h-4" />
-              </div>
+            {/* Soft decorative bottom-right organic wave */}
+            <div className="absolute right-0 bottom-0 pointer-events-none opacity-80 w-28 h-20">
+              <svg viewBox="0 0 100 70" preserveAspectRatio="none" className="w-full h-full">
+                <path
+                  d="M0 70 C30 50, 60 70, 100 35 L100 70 Z"
+                  className={card.waveColor}
+                />
+              </svg>
             </div>
 
-            <div className="mt-3 flex items-baseline gap-2">
+            {/* Header: Icon in rounded square + Title */}
+            <div className="flex items-center gap-2.5 relative z-10">
+              <div
+                className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${card.iconBox}`}
+              >
+                <Icon className="w-4.5 h-4.5" />
+              </div>
+              <span className="text-xs font-bold text-slate-800">
+                {card.title}
+              </span>
+            </div>
+
+            {/* Large number */}
+            <div className="mt-3 relative z-10">
               <span className="text-3xl font-extrabold tracking-tight text-slate-900">
                 {card.value}
               </span>
             </div>
 
-            <div className="mt-2.5 flex items-center justify-between">
-              <p className="text-xs text-slate-500 font-medium">{card.description}</p>
-              {card.onClick && (
-                <span className="text-[11px] font-medium text-slate-400 group-hover:text-indigo-600 flex items-center">
-                  Filter
-                  <ArrowUpRight className="w-3 h-3 ml-0.5" />
-                </span>
-              )}
+            {/* Description */}
+            <div className="mt-1 relative z-10">
+              <p className="text-xs text-slate-500 font-medium">
+                {card.description}
+              </p>
             </div>
           </div>
         );

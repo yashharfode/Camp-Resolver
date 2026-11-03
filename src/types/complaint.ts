@@ -33,3 +33,4 @@ export interface FilterState {
   category: ComplaintCategory | 'ALL';
   status: ComplaintStatus | 'ALL';
 }
+

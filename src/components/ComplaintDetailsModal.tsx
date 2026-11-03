@@ -212,3 +212,4 @@ export const ComplaintDetailsModal: React.FC<ComplaintDetailsModalProps> = ({
     </div>
   );
 };
+

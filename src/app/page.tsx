@@ -13,12 +13,13 @@ import {
   getPriorityQueue,
   getSummaryStats,
 } from '@/utils/urgency';
+import { Sidebar } from '@/components/Sidebar';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { SummaryCards } from '@/components/SummaryCards';
 import { ComplaintForm } from '@/components/ComplaintForm';
 import { PriorityQueue } from '@/components/PriorityQueue';
-import { SearchAndFilters } from '@/components/SearchAndFilters';
 import { ComplaintTable } from '@/components/ComplaintTable';
+import { PriorityExplanation } from '@/components/PriorityExplanation';
 import { ComplaintDetailsModal } from '@/components/ComplaintDetailsModal';
 import { STATUS_TRANSITIONS } from '@/utils/constants';
 
@@ -27,6 +28,8 @@ export default function DashboardPage() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [currentTimestamp, setCurrentTimestamp] = useState<number>(0);
   const [selectedComplaint, setSelectedComplaint] = useState<EvaluatedComplaint | null>(null);
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [filters, setFilters] = useState<FilterState>({
     searchQuery: '',
@@ -42,7 +45,7 @@ export default function DashboardPage() {
     setComplaints(loaded);
     setIsLoaded(true);
 
-    // Refresh timestamp every minute so age and urgency score stay live
+    // Refresh timestamp every minute so age and urgency score stay dynamic
     const interval = setInterval(() => {
       setCurrentTimestamp(Date.now());
     }, 60000);
@@ -50,7 +53,7 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Update selectedComplaint reference if complaints array updates
+  // Sync selectedComplaint reference when complaints array updates
   useEffect(() => {
     if (selectedComplaint) {
       const updated = complaints.find((c) => c.id === selectedComplaint.id);
@@ -60,7 +63,7 @@ export default function DashboardPage() {
     }
   }, [complaints, currentTimestamp]);
 
-  // Handle complaint creation
+  // Handle new complaint registration
   const handleCreateComplaint = (newEntry: {
     category: ComplaintCategory;
     description: string;
@@ -85,14 +88,14 @@ export default function DashboardPage() {
     return created;
   };
 
-  // Handle status advancement (Raised -> In Progress -> Resolved)
+  // Handle status progression (Raised -> In Progress -> Resolved)
   const handleAdvanceStatus = (id: string) => {
     setComplaints((prev) => {
       const target = prev.find((c) => c.id === id);
       if (!target) return prev;
 
       const nextStatus = STATUS_TRANSITIONS[target.status];
-      if (!nextStatus) return prev; // Already resolved, no further transition
+      if (!nextStatus) return prev; // Already resolved
 
       const updated = prev.map((c) => {
         if (c.id === id) {
@@ -121,7 +124,7 @@ export default function DashboardPage() {
     setCurrentTimestamp(Date.now());
   };
 
-  // Handle reset of search/filters
+  // Reset filters
   const handleResetFilters = () => {
     setFilters({
       searchQuery: '',
@@ -130,17 +133,17 @@ export default function DashboardPage() {
     });
   };
 
-  // Evaluate all complaints with live age and urgency
+  // Evaluate all complaints with live age & urgency scores
   const evaluatedComplaints = useMemo(() => {
     return complaints.map((c) => evaluateComplaint(c, currentTimestamp));
   }, [complaints, currentTimestamp]);
 
-  // Compute Summary Statistics
+  // Summary statistics for 4 top cards
   const summaryStats = useMemo(() => {
     return getSummaryStats(complaints, currentTimestamp);
   }, [complaints, currentTimestamp]);
 
-  // Compute Priority Queue (Top 3 highest-priority unresolved complaints)
+  // Priority Queue: top 3 highest-priority unresolved complaints
   const topPriorityComplaints = useMemo(() => {
     return getPriorityQueue(complaints, 3, currentTimestamp);
   }, [complaints, currentTimestamp]);
@@ -149,10 +152,9 @@ export default function DashboardPage() {
     return complaints.filter((c) => c.status === 'Raised' || c.status === 'In Progress').length;
   }, [complaints]);
 
-  // Apply search query and filters to complaints table
+  // Filter complaints for the management table
   const filteredComplaints = useMemo(() => {
     return evaluatedComplaints.filter((c) => {
-      // Search matching (ID or Description)
       if (filters.searchQuery.trim()) {
         const query = filters.searchQuery.trim().toLowerCase();
         const matchesId = c.id.toLowerCase().includes(query);
@@ -162,12 +164,10 @@ export default function DashboardPage() {
         }
       }
 
-      // Category filter
       if (filters.category !== 'ALL' && c.category !== filters.category) {
         return false;
       }
 
-      // Status filter
       if (filters.status !== 'ALL' && c.status !== filters.status) {
         return false;
       }
@@ -176,12 +176,11 @@ export default function DashboardPage() {
     });
   }, [evaluatedComplaints, filters]);
 
-  // Render a clean loading shell during client hydration
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-9 h-9 border-3 border-indigo-600/30 border-t-indigo-600 rounded-full animate-spin" />
+          <div className="w-9 h-9 border-3 border-[#6366F1]/30 border-t-[#6366F1] rounded-full animate-spin" />
           <span className="text-xs font-semibold text-slate-500">
             Initializing Campus Complaint System...
           </span>
@@ -191,84 +190,77 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Top Application Header */}
-      <DashboardHeader
-        onResetSampleData={handleResetSampleData}
-        complaintCount={complaints.length}
+    <div className="min-h-screen bg-[#F8FAFC] flex text-slate-900 font-sans">
+      {/* Left Navigation Sidebar */}
+      <Sidebar
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        isOpenMobile={mobileMenuOpen}
+        onCloseMobile={() => setMobileMenuOpen(false)}
       />
 
-      {/* Main Dashboard Workspace */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* Section 1: Summary Statistics Cards */}
-        <section aria-label="Dashboard Overview Metrics">
-          <SummaryCards
-            stats={summaryStats}
-            currentStatusFilter={filters.status}
-            onFilterByStatus={(newStatus) =>
-              setFilters((prev) => ({ ...prev, status: newStatus }))
-            }
+      {/* Main Content Area */}
+      <div className="flex-1 min-w-0 flex flex-col">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1440px] mx-auto w-full">
+          {/* Header */}
+          <DashboardHeader
+            onResetSampleData={handleResetSampleData}
+            onOpenMobileMenu={() => setMobileMenuOpen(true)}
           />
-        </section>
 
-        {/* Section 2: Priority Queue & Urgency Analytical Highlight */}
-        <PriorityQueue
-          topComplaints={topPriorityComplaints}
-          totalUnresolvedCount={totalUnresolvedCount}
-          onAdvanceStatus={handleAdvanceStatus}
-          onViewDetails={(c) => setSelectedComplaint(c)}
-        />
+          {/* Section 1: 4 Metric Cards */}
+          <section aria-label="Metric Overview">
+            <SummaryCards
+              stats={summaryStats}
+              currentStatusFilter={filters.status}
+              onFilterByStatus={(newStatus) =>
+                setFilters((prev) => ({ ...prev, status: newStatus }))
+              }
+            />
+          </section>
 
-        {/* Section 3: Submit New Complaint Form */}
-        <section aria-label="Complaint Submission">
-          <ComplaintForm onSubmitComplaint={handleCreateComplaint} />
-        </section>
+          {/* Section 2: Submit a Complaint (Left) & Unresolved Priority Queue (Right) */}
+          <section
+            aria-label="Submission and Priority Queue"
+            className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch"
+          >
+            {/* Left: Submit a Complaint */}
+            <div id="section-submit-form" className="h-full">
+              <ComplaintForm onSubmitComplaint={handleCreateComplaint} />
+            </div>
 
-        {/* Section 4: Search & Filtering Controls */}
-        <section aria-label="Search and Filter Complaints">
-          <SearchAndFilters
-            filters={filters}
-            onFilterChange={setFilters}
-            onResetFilters={handleResetFilters}
-            totalCount={complaints.length}
-            filteredCount={filteredComplaints.length}
-          />
-        </section>
+            {/* Right: Unresolved Priority Queue */}
+            <div id="section-priority-queue" className="h-full">
+              <PriorityQueue
+                topComplaints={topPriorityComplaints}
+                totalUnresolvedCount={totalUnresolvedCount}
+                onAdvanceStatus={handleAdvanceStatus}
+                onViewDetails={(c) => setSelectedComplaint(c)}
+              />
+            </div>
+          </section>
 
-        {/* Section 5: Complaint Management Table */}
-        <section aria-label="Complaints Management Table" className="space-y-2">
-          <div className="flex items-center justify-between px-1">
-            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-              All Campus Complaints
-            </h3>
-            <span className="text-xs text-slate-500 font-medium">
-              Click any row to inspect complete audit details
-            </span>
-          </div>
+          {/* Section 3: All Complaints Table with Search & Filters */}
+          <section id="section-complaints-table" aria-label="All Complaints Table">
+            <ComplaintTable
+              complaints={filteredComplaints}
+              totalComplaintsCount={complaints.length}
+              filters={filters}
+              onFilterChange={setFilters}
+              onAdvanceStatus={handleAdvanceStatus}
+              onViewDetails={(c) => setSelectedComplaint(c)}
+              onResetFilters={handleResetFilters}
+            />
+          </section>
 
-          <ComplaintTable
-            complaints={filteredComplaints}
-            totalComplaintsCount={complaints.length}
-            onAdvanceStatus={handleAdvanceStatus}
-            onViewDetails={(c) => setSelectedComplaint(c)}
-            onResetFilters={handleResetFilters}
-          />
-        </section>
-      </main>
+          {/* Section 4: Urgency & Tie-Breaking Info Card */}
+          <section id="section-urgency-info" aria-label="Urgency Scoring Reference">
+            <PriorityExplanation />
+          </section>
+        </main>
+      </div>
 
-      {/* Footer Note */}
-      <footer className="border-t border-slate-200/80 bg-white py-4 mt-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
-          <p>
-            Campus Complaint Management System • CODE CRACK 3.0 Final Submission
-          </p>
-          <p className="text-[11px] text-slate-400">
-            Note: All complaint records are stored locally in the current browser via HTML5 LocalStorage.
-          </p>
-        </div>
-      </footer>
-
-      {/* Details Modal */}
+      {/* Details Inspection Modal */}
       {selectedComplaint && (
         <ComplaintDetailsModal
           complaint={selectedComplaint}

@@ -67,3 +67,4 @@ export function generateInitialSampleRecords(): Complaint[] {
     },
   ];
 }
+
