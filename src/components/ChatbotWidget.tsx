@@ -2,14 +2,12 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  MessageSquare,
   X,
   Send,
   Sparkles,
   Bot,
   User,
   Trash2,
-  ChevronDown,
   Minimize2,
   HelpCircle,
   ShieldCheck,
@@ -32,6 +30,137 @@ const DEFAULT_SUGGESTIONS = [
   { label: 'How does priority tie-breaking work?', icon: HelpCircle },
 ];
 
+/**
+ * Parses and renders message text cleanly into HTML elements
+ * Eliminates raw markdown characters like ** and formats bold, code, and lists naturally.
+ */
+function FormattedMessage({ content, isUser }: { content: string; isUser: boolean }) {
+  if (isUser) {
+    return <span className="whitespace-pre-wrap">{content}</span>;
+  }
+
+  const parseInline = (text: string): React.ReactNode[] => {
+    const parts: React.ReactNode[] = [];
+    let remaining = text;
+    let keyIdx = 0;
+    const tokenRegex = /(\*\*[^*]+\*\*|`[^`]+`|\*[^*]+\*)/;
+
+    while (remaining.length > 0) {
+      const match = remaining.match(tokenRegex);
+      if (!match || match.index === undefined) {
+        parts.push(remaining);
+        break;
+      }
+
+      if (match.index > 0) {
+        parts.push(remaining.substring(0, match.index));
+      }
+
+      const token = match[0];
+      if (token.startsWith('**') && token.endsWith('**')) {
+        parts.push(
+          <strong key={`b-${keyIdx++}`} className="font-bold text-slate-900">
+            {token.slice(2, -2)}
+          </strong>
+        );
+      } else if (token.startsWith('`') && token.endsWith('`')) {
+        parts.push(
+          <code
+            key={`c-${keyIdx++}`}
+            className="bg-slate-100 text-[#007A78] font-mono px-1 py-0.5 rounded text-[11px] font-semibold"
+          >
+            {token.slice(1, -1)}
+          </code>
+        );
+      } else if (token.startsWith('*') && token.endsWith('*')) {
+        parts.push(
+          <em key={`em-${keyIdx++}`} className="italic text-slate-800">
+            {token.slice(1, -1)}
+          </em>
+        );
+      } else {
+        parts.push(token);
+      }
+
+      remaining = remaining.substring(match.index + token.length);
+    }
+
+    return parts;
+  };
+
+  const lines = content.split('\n');
+  const elements: React.ReactNode[] = [];
+  let listBuffer: React.ReactNode[] = [];
+
+  const flushList = () => {
+    if (listBuffer.length > 0) {
+      elements.push(
+        <ul key={`ul-${elements.length}`} className="my-1.5 pl-4 list-disc space-y-1 text-slate-700">
+          {listBuffer}
+        </ul>
+      );
+      listBuffer = [];
+    }
+  };
+
+  lines.forEach((line, index) => {
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      flushList();
+      elements.push(<div key={`sp-${index}`} className="h-1" />);
+      return;
+    }
+
+    // Heading ###
+    if (trimmed.startsWith('### ')) {
+      flushList();
+      elements.push(
+        <h5 key={`h-${index}`} className="font-bold text-slate-900 text-xs mt-2 mb-1">
+          {parseInline(trimmed.replace(/^###\s+/, ''))}
+        </h5>
+      );
+      return;
+    }
+
+    // Bullet list items
+    if (/^[-*•]\s+/.test(trimmed)) {
+      const itemText = trimmed.replace(/^[-*•]\s+/, '');
+      listBuffer.push(
+        <li key={`li-${index}`} className="leading-relaxed">
+          {parseInline(itemText)}
+        </li>
+      );
+      return;
+    }
+
+    // Numbered list items
+    const numMatch = trimmed.match(/^(\d+)\.\s+(.+)$/);
+    if (numMatch) {
+      flushList();
+      elements.push(
+        <div key={`num-${index}`} className="flex items-start gap-1.5 my-1 text-slate-700 leading-relaxed">
+          <span className="font-bold text-[#007A78] shrink-0">{numMatch[1]}.</span>
+          <div>{parseInline(numMatch[2])}</div>
+        </div>
+      );
+      return;
+    }
+
+    // Standard paragraph
+    flushList();
+    elements.push(
+      <p key={`p-${index}`} className="leading-relaxed mb-1.5 last:mb-0 text-slate-800">
+        {parseInline(trimmed)}
+      </p>
+    );
+  });
+
+  flushList();
+
+  return <div className="space-y-0.5">{elements}</div>;
+}
+
 export const ChatbotWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -39,13 +168,13 @@ export const ChatbotWidget: React.FC = () => {
       id: 'welcome',
       role: 'assistant',
       content:
-        '👋 Hello! I am **Grivex AI**, your Campus Complaint & Priority Assistant. Ask me about campus issue rules, urgency calculations, category weights, or help drafting a detailed complaint description!',
+        'Hello! I am Grivex Campus Assistant, your student and staff grievance helpdesk. How can I help you today? You can ask me how complaint priority is calculated, get troubleshooting tips for Wi-Fi or hostel issues, or let me assist you in drafting your complaint description.',
       timestamp: 'Just now',
     },
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [activeModel, setActiveModel] = useState<string>('Nemotron / Gemma MoE');
+  const [activeModel, setActiveModel] = useState<string>('Nemotron 3 Nano Omni');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -67,7 +196,7 @@ export const ChatbotWidget: React.FC = () => {
       id: `user-${Date.now()}`,
       role: 'user',
       content: textToSend,
-      timestamp: 'Just now',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
     setMessages((prev) => [...prev, userMsg]);
@@ -91,7 +220,7 @@ export const ChatbotWidget: React.FC = () => {
       if (res.ok && data.text) {
         const shortModelName = data.model
           ? data.model.split('/')[1]?.split(':')[0] || data.model
-          : 'Nemotron Nano Omni';
+          : 'Nemotron 3 Nano Omni';
 
         setActiveModel(shortModelName);
 
@@ -100,15 +229,15 @@ export const ChatbotWidget: React.FC = () => {
           role: 'assistant',
           content: data.text,
           modelUsed: shortModelName,
-          timestamp: 'Just now',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         };
         setMessages((prev) => [...prev, aiMsg]);
       } else {
         const errorMsg: ChatMessage = {
           id: `err-${Date.now()}`,
           role: 'assistant',
-          content: `⚠️ ${data.error || 'Unable to connect to AI models at this moment. Please try again shortly.'}`,
-          timestamp: 'Just now',
+          content: `${data.error || 'The campus helpdesk service is currently busy. Please try asking again in a moment.'}`,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         };
         setMessages((prev) => [...prev, errorMsg]);
       }
@@ -116,8 +245,8 @@ export const ChatbotWidget: React.FC = () => {
       const errorMsg: ChatMessage = {
         id: `err-${Date.now()}`,
         role: 'assistant',
-        content: '⚠️ Network connection error. Please verify your internet connection and try again.',
-        timestamp: 'Just now',
+        content: 'Unable to reach the server. Please check your network connection and try again.',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages((prev) => [...prev, errorMsg]);
     } finally {
@@ -130,7 +259,7 @@ export const ChatbotWidget: React.FC = () => {
       {
         id: 'welcome-reset',
         role: 'assistant',
-        content: 'Chat cleared. How can I assist you with campus complaints today?',
+        content: 'Conversation cleared. How can I assist you with campus complaints today?',
         timestamp: 'Just now',
       },
     ]);
@@ -165,14 +294,14 @@ export const ChatbotWidget: React.FC = () => {
               <div>
                 <div className="flex items-center gap-2">
                   <h4 className="text-sm font-bold text-white leading-tight">
-                    Grivex AI Assistant
+                    Grivex Campus Assistant
                   </h4>
                   <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-white/20 text-teal-100 uppercase tracking-wider">
-                    3x Fallback
+                    Online
                   </span>
                 </div>
                 <p className="text-[11px] text-teal-100/90 font-medium">
-                  Active: {activeModel}
+                  Model: {activeModel}
                 </p>
               </div>
             </div>
@@ -220,15 +349,15 @@ export const ChatbotWidget: React.FC = () => {
                     </div>
                   )}
 
-                  <div className={`max-w-[82%] space-y-1`}>
+                  <div className="max-w-[85%] space-y-1">
                     <div
-                      className={`p-3 rounded-2xl leading-relaxed whitespace-pre-wrap ${
+                      className={`p-3 rounded-2xl leading-relaxed ${
                         isUser
                           ? 'bg-[#007A78] text-white rounded-tr-xs shadow-xs font-medium'
                           : 'bg-white text-slate-800 border border-slate-200/80 rounded-tl-xs shadow-2xs'
                       }`}
                     >
-                      {m.content}
+                      <FormattedMessage content={m.content} isUser={isUser} />
                     </div>
 
                     <div
@@ -237,9 +366,7 @@ export const ChatbotWidget: React.FC = () => {
                       }`}
                     >
                       <span>{m.timestamp}</span>
-                      {m.modelUsed && (
-                        <span>• via {m.modelUsed}</span>
-                      )}
+                      {m.modelUsed && <span>• via {m.modelUsed}</span>}
                     </div>
                   </div>
 
@@ -263,7 +390,7 @@ export const ChatbotWidget: React.FC = () => {
                   <span className="w-1.5 h-1.5 bg-[#007A78] rounded-full animate-bounce [animation-delay:-0.15s]" />
                   <span className="w-1.5 h-1.5 bg-[#007A78] rounded-full animate-bounce" />
                   <span className="text-[11px] text-slate-500 font-medium ml-1">
-                    Consulting AI models...
+                    Thinking...
                   </span>
                 </div>
               </div>
@@ -272,7 +399,7 @@ export const ChatbotWidget: React.FC = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Quick Suggestions Pills (when only welcome message) */}
+          {/* Quick Suggestions Pills */}
           {messages.length <= 2 && (
             <div className="px-3 py-2 bg-white border-t border-slate-100 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
               {DEFAULT_SUGGESTIONS.map((s, idx) => {
@@ -304,7 +431,7 @@ export const ChatbotWidget: React.FC = () => {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask Grivex AI about complaints, rules, or urgency..."
+                placeholder="Ask about complaints, rules, or urgency..."
                 className="flex-1 px-3.5 py-2.5 text-xs text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#007A78]/20 focus:border-[#007A78] transition"
               />
               <button
