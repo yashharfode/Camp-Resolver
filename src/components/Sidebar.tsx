@@ -8,6 +8,7 @@ import {
   Info,
   X,
   Layers,
+  Sparkles,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -16,6 +17,7 @@ interface SidebarProps {
   isOpenMobile: boolean;
   onCloseMobile: () => void;
   onOpenSubmitModal?: () => void;
+  onOpenChatbot?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -24,15 +26,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isOpenMobile,
   onCloseMobile,
   onOpenSubmitModal,
+  onOpenChatbot,
 }) => {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'complaints', label: 'Complaints', icon: ClipboardList },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+    { id: 'ai-assistant', label: 'AI Assistant', icon: Sparkles, isAction: true },
     { id: 'about', label: 'About', icon: Info },
   ];
 
-  const handleNavClick = (id: string) => {
+  const handleNavClick = (item: { id: string; label: string; icon: any; isAction?: boolean }) => {
+    if (item.isAction) {
+      onOpenChatbot?.();
+      onCloseMobile();
+      return;
+    }
+
+    const id = item.id;
     onTabChange(id);
     onCloseMobile();
 
@@ -84,7 +95,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             return (
               <button
                 key={item.id}
-                onClick={() => handleNavClick(item.id)}
+                onClick={() => handleNavClick(item)}
                 className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 ${
                   isActive
                     ? 'bg-[#007A78] text-white shadow-sm'

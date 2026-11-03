@@ -16,6 +16,7 @@ import { PriorityQueue } from '@/components/PriorityQueue';
 import { ComplaintTable } from '@/components/ComplaintTable';
 import { PriorityExplanation } from '@/components/PriorityExplanation';
 import { ComplaintDetailsModal } from '@/components/ComplaintDetailsModal';
+import { ChatbotWidget } from '@/components/ChatbotWidget';
 import { STATUS_TRANSITIONS } from '@/utils/constants';
 import {
   subscribeToComplaints,
@@ -294,6 +295,9 @@ export default function DashboardPage() {
           onAdvanceStatus={handleAdvanceStatus}
         />
       )}
+
+      {/* Grivex AI Assistant Floating Widget */}
+      <ChatbotWidget />
     </div>
   );
 }
