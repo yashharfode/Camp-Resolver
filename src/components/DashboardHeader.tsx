@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Database, Menu, RotateCcw, Check, Flame } from 'lucide-react';
+import { Database, Menu, RotateCcw, Check } from 'lucide-react';
 import { FirebaseConnectionStatus } from '@/services/complaintService';
 
 interface DashboardHeaderProps {
@@ -30,34 +30,34 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       case 'connected':
         return (
           <div
-            className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-[#16A34A] bg-[#EBFBF4] border border-[#DCFCE7] rounded-full shadow-2xs cursor-default"
-            title="Connected to Firebase Firestore (Realtime sync enabled)"
+            className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-[#0F766E] bg-[#F0FDFA] border border-[#99F6E4] rounded-full shadow-2xs cursor-default"
+            title="Connected to Firebase Firestore"
           >
-            <Database className="w-3.5 h-3.5 text-[#16A34A]" />
+            <Database className="w-3.5 h-3.5 text-[#0D9488]" />
             <span>Firebase Connected</span>
-            <span className="h-2 w-2 rounded-full bg-[#22C55E] animate-pulse" />
+            <span className="h-2 w-2 rounded-full bg-[#14B8A6] animate-pulse" />
           </div>
         );
       case 'connecting':
         return (
           <div
             className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full shadow-2xs cursor-default"
-            title="Connecting to Firebase Firestore..."
+            title="Connecting to Firebase..."
           >
             <Database className="w-3.5 h-3.5 text-amber-600 animate-spin" />
-            <span>Connecting Firebase...</span>
+            <span>Connecting...</span>
           </div>
         );
       case 'fallback':
       default:
         return (
           <div
-            className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-[#16A34A] bg-[#EBFBF4] border border-[#DCFCE7] rounded-full shadow-2xs cursor-default"
-            title="Storage active in browser LocalStorage"
+            className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-[#0F766E] bg-[#F0FDFA] border border-[#99F6E4] rounded-full shadow-2xs cursor-default"
+            title="Offline Local Storage active"
           >
-            <Database className="w-3.5 h-3.5 text-[#16A34A]" />
+            <Database className="w-3.5 h-3.5 text-[#0D9488]" />
             <span>Local Storage Active</span>
-            <span className="h-2 w-2 rounded-full bg-[#22C55E]" />
+            <span className="h-2 w-2 rounded-full bg-[#14B8A6]" />
           </div>
         );
     }
@@ -79,7 +79,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               Campus Complaint Management System
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 font-normal mt-0.5">
-              Centralized student grievance desk with automated urgency prioritization
+              Report, track and resolve campus issues
             </p>
           </div>
         </div>
@@ -87,7 +87,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         {/* Right Badges & Controls */}
         <div className="flex items-center gap-2.5 flex-wrap">
           {/* CODE CRACK 3.0 Badge */}
-          <span className="inline-flex items-center px-3.5 py-1 text-xs font-bold bg-[#ECE9FE] text-[#5B21B6] rounded-full border border-indigo-100 shadow-2xs">
+          <span className="inline-flex items-center px-3.5 py-1 text-xs font-semibold bg-[#F0FDFA] text-[#0F766E] border border-[#99F6E4] rounded-full shadow-2xs">
             CODE CRACK 3.0
           </span>
 
@@ -102,8 +102,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           >
             {justReset ? (
               <>
-                <Check className="w-3 h-3 text-emerald-600" />
-                <span className="text-emerald-700 font-semibold">Reset Done</span>
+                <Check className="w-3 h-3 text-teal-600" />
+                <span className="text-teal-700 font-semibold">Reset Done</span>
               </>
             ) : (
               <>
@@ -144,7 +144,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               <button
                 type="button"
                 onClick={handleConfirmReset}
-                className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition active:scale-98"
+                className="px-4 py-2 text-xs font-semibold text-white bg-[#007A78] hover:bg-[#0b6664] rounded-lg shadow-sm transition active:scale-98"
               >
                 Confirm Restore
               </button>

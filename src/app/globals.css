@@ -5,6 +5,11 @@
   --foreground: #0f172a;
 }
 
+::selection {
+  background-color: #007A78;
+  color: #ffffff;
+}
+
 body {
   background-color: var(--background);
   color: var(--foreground);

@@ -19,22 +19,22 @@ export const CategoryBadge: React.FC<CategoryBadgeProps> = ({
       case 'Laboratory':
         return {
           icon: FlaskConical,
-          bg: 'bg-[#FCE7F3] text-[#BE185D] border-[#FBCFE8]',
+          bg: 'bg-[#E6FFFA] text-[#0D9488] border-[#99F6E4]',
         };
       case 'Wi-Fi':
         return {
           icon: Wifi,
-          bg: 'bg-[#E0F2FE] text-[#0284C7] border-[#BAE6FD]',
+          bg: 'bg-[#E6FFFA] text-[#0F766E] border-[#99F6E4]',
         };
       case 'Hostel':
         return {
           icon: Home,
-          bg: 'bg-[#DCFCE7] text-[#16A34A] border-[#BBF7D0]',
+          bg: 'bg-[#ECFDF5] text-[#059669] border-[#A7F3D0]',
         };
       case 'Classroom':
         return {
           icon: BookOpen,
-          bg: 'bg-[#F3E8FF] text-[#7E22CE] border-[#E9D5FF]',
+          bg: 'bg-[#E0F2FE] text-[#0284C7] border-[#BAE6FD]',
         };
       case 'Other':
       default:
@@ -50,11 +50,11 @@ export const CategoryBadge: React.FC<CategoryBadgeProps> = ({
   const sizeClasses =
     size === 'sm'
       ? 'px-2 py-0.5 text-xs'
-      : 'px-2.5 py-1 text-xs font-medium';
+      : 'px-3 py-1 text-xs font-semibold';
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-lg border font-semibold ${sizeClasses} ${bg} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-lg border ${sizeClasses} ${bg} ${className}`}
     >
       <Icon className="w-3.5 h-3.5 shrink-0" />
       <span>{category}</span>

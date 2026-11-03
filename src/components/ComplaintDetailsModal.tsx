@@ -77,15 +77,15 @@ export const ComplaintDetailsModal: React.FC<ComplaintDetailsModalProps> = ({
                   key={s.key}
                   className={`p-2.5 rounded-lg border text-center transition-all ${
                     isCurrent
-                      ? 'bg-white border-indigo-500 ring-2 ring-indigo-500/20 shadow-xs'
+                      ? 'bg-white border-[#007A78] ring-2 ring-[#007A78]/20 shadow-xs'
                       : isDone
-                      ? 'bg-emerald-50/60 border-emerald-200 text-emerald-800'
+                      ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46]'
                       : 'bg-white/60 border-slate-200 text-slate-400'
                   }`}
                 >
                   <div className="flex items-center justify-center gap-1 mb-1">
                     {isDone ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <Check className="w-3.5 h-3.5 text-[#059669]" />
                     ) : (
                       <span className="text-xs font-bold">{idx + 1}</span>
                     )}
@@ -179,7 +179,7 @@ export const ComplaintDetailsModal: React.FC<ComplaintDetailsModalProps> = ({
                   onAdvanceStatus(complaint.id);
                   onClose();
                 }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition active:scale-98"
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-[#007A78] hover:bg-[#0b6664] rounded-lg shadow-sm transition active:scale-98"
               >
                 <span>Advance to In Progress</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -193,7 +193,7 @@ export const ComplaintDetailsModal: React.FC<ComplaintDetailsModalProps> = ({
                   onAdvanceStatus(complaint.id);
                   onClose();
                 }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm transition active:scale-98"
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-[#059669] hover:bg-[#047857] rounded-lg shadow-sm transition active:scale-98"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>Mark as Resolved</span>
@@ -212,4 +212,3 @@ export const ComplaintDetailsModal: React.FC<ComplaintDetailsModalProps> = ({
     </div>
   );
 };
-

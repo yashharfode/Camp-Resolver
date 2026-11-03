@@ -93,7 +93,7 @@ export const ComplaintForm: React.FC<ComplaintFormProps> = ({ onSubmitComplaint 
       {/* Header */}
       <div>
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-9 h-9 rounded-xl bg-[#ECE9FE] text-[#6366F1] flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-[#F0FDFA] text-[#007A78] flex items-center justify-center shrink-0">
             <PenSquare className="w-5 h-5" />
           </div>
           <div>
@@ -108,8 +108,8 @@ export const ComplaintForm: React.FC<ComplaintFormProps> = ({ onSubmitComplaint 
 
         {/* Success Alert */}
         {submittedId && (
-          <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-start gap-2.5 animate-in fade-in slide-in-from-top-1 text-xs">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+          <div className="mb-4 p-3 bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] rounded-xl flex items-start gap-2.5 animate-in fade-in slide-in-from-top-1 text-xs">
+            <CheckCircle2 className="w-4 h-4 text-[#059669] shrink-0 mt-0.5" />
             <div>
               <span className="font-bold">Complaint Registered!</span> Assigned ID{' '}
               <strong className="font-mono">{submittedId}</strong> with status{' '}
@@ -138,7 +138,7 @@ export const ComplaintForm: React.FC<ComplaintFormProps> = ({ onSubmitComplaint 
                     setErrors((prev) => ({ ...prev, category: undefined }));
                   }
                 }}
-                className="w-full pl-10 pr-10 py-2.5 text-xs font-semibold text-slate-800 bg-white border border-slate-200 rounded-xl appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer transition shadow-2xs"
+                className="w-full pl-10 pr-10 py-2.5 text-xs font-semibold text-slate-800 bg-white border border-slate-200 rounded-xl appearance-none focus:outline-none focus:ring-2 focus:ring-[#007A78]/20 focus:border-[#007A78] cursor-pointer transition shadow-2xs"
               >
                 {CATEGORIES.map((cat) => (
                   <option key={cat} value={cat}>
@@ -180,7 +180,7 @@ export const ComplaintForm: React.FC<ComplaintFormProps> = ({ onSubmitComplaint 
                 className={`w-full rounded-xl border p-3 pb-7 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition shadow-2xs resize-none ${
                   errors.description
                     ? 'border-rose-300 focus:ring-rose-500/20 focus:border-rose-500'
-                    : 'border-slate-200 focus:ring-indigo-500/20 focus:border-indigo-500'
+                    : 'border-slate-200 focus:ring-[#007A78]/20 focus:border-[#007A78]'
                 }`}
               />
 
@@ -203,7 +203,7 @@ export const ComplaintForm: React.FC<ComplaintFormProps> = ({ onSubmitComplaint 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 text-xs font-bold text-white bg-[#6366F1] hover:bg-[#4F46E5] disabled:opacity-60 disabled:cursor-not-allowed rounded-xl shadow-sm transition-all active:scale-[0.99]"
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 text-xs font-bold text-white bg-[#007A78] hover:bg-[#0b6664] disabled:opacity-60 disabled:cursor-not-allowed rounded-xl shadow-sm transition-all active:scale-[0.99]"
             >
               <Send className="w-4 h-4 -rotate-45" />
               <span>{isSubmitting ? 'Submitting...' : 'Submit Complaint'}</span>

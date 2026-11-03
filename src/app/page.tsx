@@ -270,6 +270,12 @@ export default function DashboardPage() {
               onAdvanceStatus={handleAdvanceStatus}
               onViewDetails={(c) => setSelectedComplaint(c)}
               onResetFilters={handleResetFilters}
+              onOpenNewComplaintModal={() => {
+                const el = document.getElementById('section-submit-form');
+                el?.scrollIntoView({ behavior: 'smooth' });
+                const textarea = document.querySelector('textarea') as HTMLTextAreaElement | null;
+                textarea?.focus();
+              }}
             />
           </section>
 
