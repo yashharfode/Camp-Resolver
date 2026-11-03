@@ -380,9 +380,9 @@ export default function StudentPortalPage() {
 
         {/* TAB 1: REGISTER COMPLAINT */}
         {activeTab === 'register' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            {/* Form Column (7 cols) */}
-            <div className="lg:col-span-8 bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xs space-y-6">
+          <div className="max-w-4xl mx-auto space-y-6">
+            {/* Form Column (Full Width Centered) */}
+            <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xs space-y-6">
               <div className="border-b border-slate-100 pb-4">
                 <h2 className="text-lg font-bold text-slate-900">
                   New Complaint Registration
@@ -654,40 +654,44 @@ export default function StudentPortalPage() {
               </form>
             </div>
 
-            {/* Right Information Sidebar (4 cols) */}
-            <div className="lg:col-span-4 space-y-6">
-              {/* Status Stages Guide */}
-              <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs space-y-3">
-                <h4 className="text-sm font-bold text-slate-900">
-                  Resolution Workflow
-                </h4>
-                <div className="space-y-3 text-xs">
-                  <div className="flex items-start gap-3">
-                    <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
-                      1
+            {/* Resolution Workflow (At the very bottom across full width) */}
+            <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs space-y-4">
+              <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-[#007A78]" />
+                <span>Resolution Workflow</span>
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                <div className="flex items-start gap-3 p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+                  <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-700 font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">
+                    1
+                  </span>
+                  <div>
+                    <strong className="text-slate-800 block font-bold text-xs sm:text-sm">Raised</strong>
+                    <span className="text-slate-500 text-[11px] leading-relaxed block mt-0.5">
+                      Logged in system and queued for relevant department.
                     </span>
-                    <div>
-                      <strong className="text-slate-800 block">Raised</strong>
-                      <span className="text-slate-500 text-[11px]">Logged in system and queued for relevant department.</span>
-                    </div>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <span className="w-5 h-5 rounded-full bg-sky-100 text-sky-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
-                      2
+                </div>
+                <div className="flex items-start gap-3 p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+                  <span className="w-6 h-6 rounded-full bg-sky-100 text-sky-700 font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">
+                    2
+                  </span>
+                  <div>
+                    <strong className="text-slate-800 block font-bold text-xs sm:text-sm">In Progress</strong>
+                    <span className="text-slate-500 text-[11px] leading-relaxed block mt-0.5">
+                      Assigned to technician, plumber, electrician, or IT team.
                     </span>
-                    <div>
-                      <strong className="text-slate-800 block">In Progress</strong>
-                      <span className="text-slate-500 text-[11px]">Assigned to technician, plumber, electrician, or IT team.</span>
-                    </div>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
-                      3
+                </div>
+                <div className="flex items-start gap-3 p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+                  <span className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">
+                    3
+                  </span>
+                  <div>
+                    <strong className="text-slate-800 block font-bold text-xs sm:text-sm">Resolved</strong>
+                    <span className="text-slate-500 text-[11px] leading-relaxed block mt-0.5">
+                      Work verified and ticket successfully closed.
                     </span>
-                    <div>
-                      <strong className="text-slate-800 block">Resolved</strong>
-                      <span className="text-slate-500 text-[11px]">Work verified and ticket successfully closed.</span>
-                    </div>
                   </div>
                 </div>
               </div>

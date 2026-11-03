@@ -69,3 +69,4 @@ export const CampResolverLogo: React.FC<CampResolverLogoProps> = ({
 };
 
 export default CampResolverLogo;
+

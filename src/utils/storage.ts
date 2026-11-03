@@ -3,8 +3,8 @@ import { STORAGE_KEYS, generateInitialSampleRecords } from './constants';
 
 /**
  * Safely reads complaints from localStorage.
- * Handles missing data, invalid JSON, or uninitialized storage.
- * Seeds initial sample records only on the very first time.
+ * Only returns complaints that have been manually added by users.
+ * Does not prefetch or auto-seed dummy records.
  */
 export function getStoredComplaints(): Complaint[] {
   if (typeof window === 'undefined') {
@@ -12,37 +12,17 @@ export function getStoredComplaints(): Complaint[] {
   }
 
   try {
-    const isSeeded = window.localStorage.getItem(STORAGE_KEYS.SEEDED);
     const storedData = window.localStorage.getItem(STORAGE_KEYS.COMPLAINTS);
-
-    // If never seeded before and no data exists, initialize with sample records
-    if (!isSeeded && !storedData) {
-      const initial = generateInitialSampleRecords();
-      saveComplaints(initial);
-      window.localStorage.setItem(STORAGE_KEYS.SEEDED, 'true');
-      return initial;
-    }
-
     if (storedData) {
       const parsed = JSON.parse(storedData);
       if (Array.isArray(parsed)) {
         return parsed;
       }
     }
-
-    // If storage is marked as seeded but data was cleared (e.g. user emptied list), return empty array
-    if (isSeeded) {
-      return [];
-    }
-
-    // Fallback seed
-    const initial = generateInitialSampleRecords();
-    saveComplaints(initial);
-    window.localStorage.setItem(STORAGE_KEYS.SEEDED, 'true');
-    return initial;
+    return [];
   } catch (error) {
     console.error('Error reading complaints from localStorage:', error);
-    return generateInitialSampleRecords();
+    return [];
   }
 }
 
@@ -61,7 +41,8 @@ export function saveComplaints(complaints: Complaint[]): void {
 }
 
 /**
- * Resets complaints back to the fresh initial sample records.
+ * Resets complaints back to the official benchmark sample records.
+ * Only triggered on explicit administrator action in settings.
  */
 export function resetToSampleComplaints(): Complaint[] {
   if (typeof window === 'undefined') {
@@ -81,12 +62,10 @@ export function resetToSampleComplaints(): Complaint[] {
 /**
  * Generates the next sequential unique complaint ID.
  * Scans all existing complaints for numeric suffixes after 'C' (e.g. C01 -> 1, C04 -> 4)
- * and picks the next unused integer, padded to at least 2 digits (e.g. C05, C06, C100).
+ * and picks the next unused integer, padded to at least 2 digits (e.g. C01, C02, ...).
  * Guarantees never to collide with or overwrite any existing complaint.
  */
 export function generateNextComplaintId(existingComplaints: Complaint[]): string {
-  const existingIds = new Set(existingComplaints.map((c) => c.id.trim().toUpperCase()));
-
   let maxNum = 0;
   for (const c of existingComplaints) {
     const match = c.id.trim().match(/^C0*(\d+)$/i);
@@ -98,14 +77,7 @@ export function generateNextComplaintId(existingComplaints: Complaint[]): string
     }
   }
 
-  let nextNum = maxNum + 1;
-  let candidateId = `C${nextNum.toString().padStart(2, '0')}`;
-
-  // Collision safety loop
-  while (existingIds.has(candidateId.toUpperCase())) {
-    nextNum++;
-    candidateId = `C${nextNum.toString().padStart(2, '0')}`;
-  }
-
-  return candidateId;
+  const nextNum = maxNum + 1;
+  const padded = nextNum < 10 ? `0${nextNum}` : `${nextNum}`;
+  return `C${padded}`;
 }

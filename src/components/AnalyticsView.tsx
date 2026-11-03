@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { Complaint } from '@/types/complaint';
 import { evaluateComplaint } from '@/utils/urgency';
+import { exportComplaintsToExcel } from '@/utils/excelExport';
 import {
   FileText,
   Hourglass,
@@ -14,6 +15,7 @@ import {
   BarChart3,
   PieChart,
   ShieldAlert,
+  FileSpreadsheet,
 } from 'lucide-react';
 
 interface AnalyticsViewProps {
@@ -72,25 +74,9 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ complaints, curren
   const medPct = total > 0 ? Math.round((priorityMedium / total) * 100) : 0;
   const lowPct = total > 0 ? Math.round((priorityLow / total) * 100) : 0;
 
-  // Export report
+  // Export report in genuine Excel (.xlsx) format
   const handleExport = () => {
-    const csvContent =
-      'data:text/csv;charset=utf-8,' +
-      ['ID,Category,Title,Status,Urgency Score,Age Hours,Submitted At']
-        .concat(
-          evaluated.map(
-            (c) =>
-              `"${c.id}","${c.category}","${(c.title || c.description).replace(/"/g, '""')}","${c.status}","${c.urgencyScore}","${c.ageInHours}","${c.submittedAt}"`
-          )
-        )
-        .join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `campus_complaints_analytics_${Date.now()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    exportComplaintsToExcel(evaluated, 'Camp_Resolver_Analytics_Report');
   };
 
   return (

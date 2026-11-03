@@ -17,16 +17,14 @@ export const COLLECTION_NAME = 'camp_resolver_complaints';
 export type FirebaseConnectionStatus = 'connected' | 'connecting' | 'fallback';
 
 /**
- * Ensures initial database state:
- * - If documents already exist in the Firebase database, they are PRESERVED and untouched.
- * - Only if the collection is completely empty, it seeds the official sample complaints.
+ * Reads existing complaints from Firebase Firestore.
+ * Does NOT auto-seed sample records; only loads manually added data.
  */
-export async function initializeFirebaseComplaints(): Promise<Complaint[]> {
+export async function getFirebaseComplaints(): Promise<Complaint[]> {
   try {
     const colRef = collection(db, COLLECTION_NAME);
     const snapshot = await getDocs(colRef);
 
-    // If documents already exist in Firebase, DO NOT disturb any of those records/strings!
     if (!snapshot.empty) {
       const existing: Complaint[] = [];
       snapshot.forEach((docSnap) => {
@@ -40,23 +38,16 @@ export async function initializeFirebaseComplaints(): Promise<Complaint[]> {
       return existing;
     }
 
-    // Only seed if collection is completely empty
-    const initialRecords = generateInitialSampleRecords();
-    for (const record of initialRecords) {
-      await setDoc(doc(db, COLLECTION_NAME, record.id), record);
-    }
-
-    saveToLocalCache(initialRecords);
-    return initialRecords;
+    return getStoredComplaints();
   } catch (error) {
-    console.warn('Firebase read error or offline. Falling back to local storage:', error);
+    console.warn('Firebase read error or offline. Using local storage:', error);
     return getStoredComplaints();
   }
 }
 
 /**
  * Subscribes to real-time complaint updates from Firebase Firestore.
- * If Firebase is unreachable or permissions are pending, safely falls back to local storage cache.
+ * Does not pre-seed dummy data; shows only manually submitted complaints.
  */
 export function subscribeToComplaints(
   onUpdate: (complaints: Complaint[], isFirebase: boolean) => void,
@@ -73,8 +64,9 @@ export function subscribeToComplaints(
         onStatusChange?.('connected');
 
         if (snapshot.empty) {
-          const seeded = await initializeFirebaseComplaints();
-          onUpdate(seeded, true);
+          // If empty in Firestore, load only manual local complaints or empty list
+          const local = getStoredComplaints();
+          onUpdate(local, true);
           return;
         }
 
@@ -94,7 +86,6 @@ export function subscribeToComplaints(
       (error) => {
         console.warn('Firestore onSnapshot listener error (using local cache):', error);
         onStatusChange?.('fallback');
-        // Fall back to local storage without crashing
         const local = getStoredComplaints();
         onUpdate(local, false);
       }
@@ -114,7 +105,6 @@ export function subscribeToComplaints(
  * Adds a new complaint to Firebase Firestore & local storage.
  */
 export async function addComplaint(complaint: Complaint): Promise<void> {
-  // Always update local cache immediately for zero latency
   const current = getStoredComplaints();
   const updated = [complaint, ...current.filter((c) => c.id !== complaint.id)];
   saveToLocalCache(updated);

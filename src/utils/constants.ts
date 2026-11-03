@@ -23,8 +23,8 @@ export const STATUS_TRANSITIONS: Record<ComplaintStatus, ComplaintStatus | null>
 };
 
 export const STORAGE_KEYS = {
-  COMPLAINTS: 'camp_resolver_complaints_v2',
-  SEEDED: 'camp_resolver_seeded_v2',
+  COMPLAINTS: 'camp_resolver_manual_complaints_v3',
+  SEEDED: 'camp_resolver_seeded_v3',
 };
 
 export function generateInitialSampleRecords(): Complaint[] {

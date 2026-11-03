@@ -136,9 +136,6 @@ export default function AdminComplaintsPage() {
               onAdvanceStatus={handleAdvanceStatus}
               onViewDetails={setSelectedComplaint}
               onResetFilters={handleResetFilters}
-              onOpenNewComplaintModal={() => {
-                window.location.href = '/admin/submit';
-              }}
             />
           </main>
         </div>

@@ -14,7 +14,9 @@ import {
   ArrowRight,
   Check,
   RotateCcw,
+  FileSpreadsheet,
 } from 'lucide-react';
+import { exportComplaintsToExcel } from '@/utils/excelExport';
 
 interface ComplaintTableProps {
   complaints: EvaluatedComplaint[];
@@ -24,7 +26,7 @@ interface ComplaintTableProps {
   onAdvanceStatus: (id: string) => void;
   onViewDetails: (complaint: EvaluatedComplaint) => void;
   onResetFilters: () => void;
-  onOpenNewComplaintModal: () => void;
+  onOpenNewComplaintModal?: () => void;
 }
 
 export const ComplaintTable: React.FC<ComplaintTableProps> = ({
@@ -122,15 +124,28 @@ export const ComplaintTable: React.FC<ComplaintTableProps> = ({
             </button>
           )}
 
-          {/* + New Complaint Solid Teal Button */}
+          {/* Export Excel Button */}
           <button
             type="button"
-            onClick={onOpenNewComplaintModal}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#007A78] hover:bg-[#0b6664] rounded-xl shadow-xs transition active:scale-98"
+            onClick={() => exportComplaintsToExcel(complaints)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl shadow-2xs transition cursor-pointer"
+            title="Export all visible complaints to Excel (.xlsx)"
           >
-            <Plus className="w-3.5 h-3.5" />
-            <span>New Complaint</span>
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+            <span className="hidden sm:inline">Export Excel</span>
           </button>
+
+          {/* + New Complaint Button (only if enabled) */}
+          {onOpenNewComplaintModal && (
+            <button
+              type="button"
+              onClick={onOpenNewComplaintModal}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#007A78] hover:bg-[#0b6664] rounded-xl shadow-xs transition active:scale-98"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>New Complaint</span>
+            </button>
+          )}
         </div>
       </div>
 

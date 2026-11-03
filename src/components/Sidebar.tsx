@@ -40,7 +40,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const navItems = [
     { href: '/admin', id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/admin/complaints', id: 'complaints', label: 'Complaints', icon: ClipboardList },
-    { href: '/admin/submit', id: 'submit', label: 'Submit Complaint', icon: PlusCircle },
     { href: '/admin/priority-queue', id: 'priority-queue', label: 'Priority Queue', icon: Flame },
     { href: '/admin/analytics', id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { href: '/admin/settings', id: 'settings', label: 'Settings', icon: Settings },
