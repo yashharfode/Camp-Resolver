@@ -497,3 +497,4 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ complaints, curren
     </div>
   );
 };
+

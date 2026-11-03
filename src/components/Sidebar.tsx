@@ -15,6 +15,7 @@ import {
   Sparkles,
   LogOut,
   GraduationCap,
+  XCircle,
 } from 'lucide-react';
 import { useAdminAuth } from './AdminLoginGuard';
 
@@ -137,13 +138,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         )}
 
-        {/* Admin Sign Out Button */}
+        {/* Close Dashboard Button */}
         <button
-          onClick={logout}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 transition cursor-pointer"
+          onClick={() => {
+            if (window.confirm('Close Admin Dashboard and return to Student Portal?')) {
+              logout();
+              window.location.href = '/student';
+            }
+          }}
+          className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-rose-600 hover:text-white hover:bg-rose-600 border border-rose-200 transition shadow-2xs cursor-pointer group"
+          title="Close Admin Dashboard and Lock Session"
         >
-          <LogOut className="w-4 h-4 text-rose-500" />
-          <span>Admin Logout</span>
+          <div className="flex items-center gap-2">
+            <XCircle className="w-4 h-4 text-rose-500 group-hover:text-white" />
+            <span>Close Dashboard</span>
+          </div>
+          <span className="text-[10px] font-bold text-rose-500 group-hover:text-white">✕</span>
         </button>
 
         {/* Small Branding Footer */}
