@@ -1,24 +1,46 @@
 'use client';
 
-import React from 'react';
-import { EvaluatedComplaint } from '@/types/complaint';
+import React, { useState } from 'react';
+import { EvaluatedComplaint, ComplaintStatus } from '@/types/complaint';
 import { CategoryBadge } from './CategoryBadge';
 import { StatusBadge } from './StatusBadge';
 import { formatAge } from '@/utils/urgency';
-import { X, Calendar, Clock, Flame, ArrowRight, CheckCircle2, Check } from 'lucide-react';
+import {
+  X,
+  Calendar,
+  Clock,
+  Flame,
+  ArrowRight,
+  CheckCircle2,
+  Check,
+  User,
+  Mail,
+  GraduationCap,
+  MapPin,
+  ShieldCheck,
+  Send,
+  History,
+} from 'lucide-react';
 
 interface ComplaintDetailsModalProps {
   complaint: EvaluatedComplaint | null;
   onClose: () => void;
-  onAdvanceStatus: (id: string) => void;
+  onAdvanceStatus?: (id: string) => void;
+  onUpdateStatusAndRemarks?: (id: string, newStatus: ComplaintStatus, remarks?: string) => void;
 }
 
 export const ComplaintDetailsModal: React.FC<ComplaintDetailsModalProps> = ({
   complaint,
   onClose,
   onAdvanceStatus,
+  onUpdateStatusAndRemarks,
 }) => {
   if (!complaint) return null;
+
+  const [selectedStatus, setSelectedStatus] = useState<ComplaintStatus>(complaint.status);
+  const [remarks, setRemarks] = useState<string>(complaint.adminRemarks || '');
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const steps = [
     { key: 'Raised', label: '1. Raised', desc: 'Complaint registered by student' },
@@ -33,7 +55,24 @@ export const ComplaintDetailsModal: React.FC<ComplaintDetailsModalProps> = ({
       ? 1
       : 2;
 
-  const ageFactor = Math.floor(complaint.ageInHours / 24);
+  const handleSaveStatus = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      if (onUpdateStatusAndRemarks) {
+        await onUpdateStatusAndRemarks(complaint.id, selectedStatus, remarks.trim());
+      } else if (onAdvanceStatus && selectedStatus !== complaint.status) {
+        onAdvanceStatus(complaint.id);
+      }
+      setSaveSuccess(true);
+      setTimeout(() => {
+        setSaveSuccess(false);
+        onClose();
+      }, 700);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div
@@ -41,13 +80,13 @@ export const ComplaintDetailsModal: React.FC<ComplaintDetailsModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-150 relative max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-7 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-150 relative max-h-[92vh] overflow-y-auto space-y-5"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-          <div className="flex items-center gap-3">
-            <span className="font-mono text-lg font-bold text-slate-900 bg-slate-100 px-3 py-1 rounded-lg border border-slate-200">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="font-mono text-base font-bold text-slate-900 bg-slate-100 px-3 py-1 rounded-xl border border-slate-200">
               {complaint.id}
             </span>
             <CategoryBadge category={complaint.category} showWeight size="md" />
@@ -63,87 +102,97 @@ export const ComplaintDetailsModal: React.FC<ComplaintDetailsModalProps> = ({
           </button>
         </div>
 
-        {/* Workflow Progression Stepper */}
-        <div className="mt-5 p-4 bg-slate-50/80 rounded-xl border border-slate-200/80">
-          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-3">
-            Workflow Status Pipeline
-          </span>
-          <div className="grid grid-cols-3 gap-2">
-            {steps.map((s, idx) => {
-              const isDone = idx < currentStepIndex;
-              const isCurrent = idx === currentStepIndex;
-              return (
-                <div
-                  key={s.key}
-                  className={`p-2.5 rounded-lg border text-center transition-all ${
-                    isCurrent
-                      ? 'bg-white border-[#007A78] ring-2 ring-[#007A78]/20 shadow-xs'
-                      : isDone
-                      ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46]'
-                      : 'bg-white/60 border-slate-200 text-slate-400'
-                  }`}
-                >
-                  <div className="flex items-center justify-center gap-1 mb-1">
-                    {isDone ? (
-                      <Check className="w-3.5 h-3.5 text-[#059669]" />
-                    ) : (
-                      <span className="text-xs font-bold">{idx + 1}</span>
-                    )}
-                  </div>
-                  <span className="text-xs font-bold block text-slate-800">
-                    {s.key}
-                  </span>
-                  <span className="text-[10px] text-slate-500 hidden sm:block mt-0.5">
-                    {s.desc}
-                  </span>
-                </div>
-              );
-            })}
+        {/* Title & Subject */}
+        {complaint.title && (
+          <div>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-0.5">
+              Subject
+            </span>
+            <h3 className="text-base font-bold text-slate-900">{complaint.title}</h3>
+          </div>
+        )}
+
+        {/* Student & Location Info Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 text-xs">
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+              <User className="w-3.5 h-3.5" />
+              <span>Student Details</span>
+            </span>
+            <p className="font-bold text-slate-800">
+              {complaint.studentName || 'Student'}
+            </p>
+            {complaint.scholarNumber && (
+              <p className="text-slate-600 flex items-center gap-1">
+                <GraduationCap className="w-3 h-3 text-slate-400" />
+                <span>{complaint.scholarNumber}</span>
+              </p>
+            )}
+            {complaint.email && (
+              <p className="text-slate-600 flex items-center gap-1">
+                <Mail className="w-3 h-3 text-slate-400" />
+                <span>{complaint.email}</span>
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+              <MapPin className="w-3.5 h-3.5" />
+              <span>Campus Location</span>
+            </span>
+            <p className="font-bold text-slate-800">
+              {complaint.location || 'Campus Facilities'}
+            </p>
+            {complaint.gpsLocation && (
+              <p className="text-emerald-700 font-mono text-[11px] font-semibold flex items-center gap-1">
+                <Check className="w-3 h-3" />
+                <span>GPS: {complaint.gpsLocation}</span>
+              </p>
+            )}
           </div>
         </div>
 
         {/* Issue Description */}
-        <div className="mt-5">
+        <div>
           <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
             Full Description
           </label>
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">
+          <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">
             {complaint.description}
           </div>
         </div>
 
-        {/* Metadata & Urgency Analytics */}
-        <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          {/* Submission Timestamp */}
+        {/* Urgency Calculation Breakdown */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
           <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5 text-slate-400" />
-              Submission Time
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+              <Calendar className="w-3 h-3 text-slate-400" />
+              <span>Submission Time</span>
             </span>
-            <p className="text-xs font-semibold text-slate-900">
+            <p className="font-semibold text-slate-900">
               {new Date(complaint.submittedAt).toLocaleString(undefined, {
                 dateStyle: 'medium',
                 timeStyle: 'short',
               })}
             </p>
-            <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+            <p className="text-[11px] text-slate-500 flex items-center gap-1">
               <Clock className="w-3 h-3 text-slate-400" />
-              {formatAge(complaint.ageInHours)} ({complaint.ageInHours} total hours)
+              <span>{formatAge(complaint.ageInHours)} ({complaint.ageInHours}h total)</span>
             </p>
           </div>
 
-          {/* Urgency Calculation */}
           <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-              <Flame className="w-3.5 h-3.5 text-rose-500" />
-              Urgency Evaluation
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+              <Flame className="w-3 h-3 text-rose-500" />
+              <span>Urgency Formula Score</span>
             </span>
             <div className="flex items-baseline gap-2">
-              <span className="text-lg font-mono font-bold text-slate-900">
+              <span className="text-base font-mono font-bold text-slate-900">
                 Score: {complaint.urgencyScore}
               </span>
               <span
-                className={`text-[11px] font-bold px-2 py-0.5 rounded ${
+                className={`text-[10px] font-bold px-2 py-0.5 rounded ${
                   complaint.urgencyTier === 'High'
                     ? 'bg-rose-100 text-rose-700'
                     : complaint.urgencyTier === 'Medium'
@@ -154,60 +203,103 @@ export const ComplaintDetailsModal: React.FC<ComplaintDetailsModalProps> = ({
                 {complaint.urgencyTier} Priority
               </span>
             </div>
-            <p className="text-[11px] font-mono text-slate-500">
+            <p className="text-[10px] font-mono text-slate-500">
               Weight ({complaint.categoryWeight}) + floor({complaint.ageInHours}h / 24) ={' '}
               {complaint.urgencyScore}
             </p>
           </div>
         </div>
 
-        {/* Action buttons */}
-        <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
-          >
-            Close
-          </button>
-
-          <div className="flex items-center gap-2">
-            {complaint.status === 'Raised' && (
-              <button
-                type="button"
-                onClick={() => {
-                  onAdvanceStatus(complaint.id);
-                  onClose();
-                }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-[#007A78] hover:bg-[#0b6664] rounded-lg shadow-sm transition active:scale-98"
-              >
-                <span>Advance to In Progress</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            )}
-
-            {complaint.status === 'In Progress' && (
-              <button
-                type="button"
-                onClick={() => {
-                  onAdvanceStatus(complaint.id);
-                  onClose();
-                }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-[#059669] hover:bg-[#047857] rounded-lg shadow-sm transition active:scale-98"
-              >
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Mark as Resolved</span>
-              </button>
-            )}
-
-            {complaint.status === 'Resolved' && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Issue Fully Resolved</span>
-              </span>
-            )}
+        {/* ADMIN STATUS UPDATER SECTION (2 to 3 Status Options + Remarks) */}
+        <form onSubmit={handleSaveStatus} className="p-4 bg-teal-50/60 rounded-2xl border border-teal-200/80 space-y-3">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-[#007A78]">
+            <ShieldCheck className="w-4 h-4" />
+            <span>Admin Status Update & Student Feedback</span>
           </div>
-        </div>
+
+          {/* 3 Status Options */}
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold text-slate-700 block">
+              Update Status:
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {(['Raised', 'In Progress', 'Resolved'] as ComplaintStatus[]).map((st) => (
+                <button
+                  key={st}
+                  type="button"
+                  onClick={() => setSelectedStatus(st)}
+                  className={`py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                    selectedStatus === st
+                      ? st === 'Resolved'
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : st === 'In Progress'
+                        ? 'bg-[#007A78] text-white shadow-xs'
+                        : 'bg-amber-600 text-white shadow-xs'
+                      : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  {selectedStatus === st && <Check className="w-3.5 h-3.5" />}
+                  <span>{st}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Admin Remarks Input */}
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold text-slate-700 block">
+              Official Administration Remark (Visible to student on tracking):
+            </label>
+            <input
+              type="text"
+              value={remarks}
+              onChange={(e) => setRemarks(e.target.value)}
+              placeholder="e.g. Electrician Kumar assigned, spare parts arriving today..."
+              className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#007A78]/20 focus:border-[#007A78] transition font-medium"
+            />
+          </div>
+
+          <div className="flex items-center justify-between pt-1">
+            {saveSuccess ? (
+              <span className="text-xs font-bold text-emerald-700 flex items-center gap-1">
+                <Check className="w-4 h-4" />
+                <span>Updated successfully!</span>
+              </span>
+            ) : <span />}
+
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-[#007A78] hover:bg-[#005C5A] text-white transition shadow-2xs flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+            >
+              <Send className="w-3 h-3" />
+              <span>{isSaving ? 'Saving...' : 'Save & Publish Update'}</span>
+            </button>
+          </div>
+        </form>
+
+        {/* Status History (if any) */}
+        {complaint.statusUpdates && complaint.statusUpdates.length > 0 && (
+          <div className="space-y-2 pt-2 border-t border-slate-100">
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+              <History className="w-3.5 h-3.5" />
+              <span>Status History Log</span>
+            </span>
+            <div className="space-y-1.5 max-h-32 overflow-y-auto">
+              {complaint.statusUpdates.map((su, idx) => (
+                <div key={idx} className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-between text-[11px]">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-slate-800">{su.status}</span>
+                    <span className="text-slate-500">{su.note}</span>
+                  </div>
+                  <span className="text-slate-400 font-mono text-[10px]">
+                    {new Date(su.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

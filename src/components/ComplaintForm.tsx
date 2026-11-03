@@ -9,7 +9,7 @@ interface ComplaintFormProps {
   onSubmitComplaint: (newComplaint: {
     category: ComplaintCategory;
     description: string;
-  }) => Complaint;
+  }) => Complaint | Promise<Complaint>;
 }
 
 export const ComplaintForm: React.FC<ComplaintFormProps> = ({ onSubmitComplaint }) => {
@@ -57,7 +57,7 @@ export const ComplaintForm: React.FC<ComplaintFormProps> = ({ onSubmitComplaint 
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (isSubmitting) return;
@@ -69,14 +69,18 @@ export const ComplaintForm: React.FC<ComplaintFormProps> = ({ onSubmitComplaint 
     setIsSubmitting(true);
 
     try {
-      const created = onSubmitComplaint({
-        category: category as ComplaintCategory,
-        description: description.trim(),
-      });
+      const created = await Promise.resolve(
+        onSubmitComplaint({
+          category: category as ComplaintCategory,
+          description: description.trim(),
+        })
+      );
 
       setDescription('');
       setErrors({});
-      setSubmittedId(created.id);
+      if (created && created.id) {
+        setSubmittedId(created.id);
+      }
 
       setTimeout(() => {
         setSubmittedId(null);

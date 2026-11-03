@@ -1,4 +1,4 @@
-import { Complaint, ComplaintStatus } from '@/types/complaint';
+import { Complaint, ComplaintStatus, StatusUpdateRecord } from '@/types/complaint';
 import { db } from '@/lib/firebase';
 import {
   collection,
@@ -12,7 +12,7 @@ import {
 import { generateInitialSampleRecords } from '@/utils/constants';
 import { getStoredComplaints, saveComplaints as saveToLocalCache } from '@/utils/storage';
 
-const COLLECTION_NAME = 'campus_complaints';
+export const COLLECTION_NAME = 'camp_resolver_complaints';
 
 export type FirebaseConnectionStatus = 'connected' | 'connecting' | 'fallback';
 
@@ -36,7 +36,6 @@ export async function initializeFirebaseComplaints(): Promise<Complaint[]> {
           id: data.id || docSnap.id,
         });
       });
-      // Cache locally
       saveToLocalCache(existing);
       return existing;
     }
@@ -57,7 +56,7 @@ export async function initializeFirebaseComplaints(): Promise<Complaint[]> {
 
 /**
  * Subscribes to real-time complaint updates from Firebase Firestore.
- * If Firebase is unreachable, safely falls back to local storage cache.
+ * If Firebase is unreachable or permissions are pending, safely falls back to local storage cache.
  */
 export function subscribeToComplaints(
   onUpdate: (complaints: Complaint[], isFirebase: boolean) => void,
@@ -74,7 +73,6 @@ export function subscribeToComplaints(
         onStatusChange?.('connected');
 
         if (snapshot.empty) {
-          // If empty in Firebase, initialize with sample records without overwriting
           const seeded = await initializeFirebaseComplaints();
           onUpdate(seeded, true);
           return;
@@ -113,38 +111,82 @@ export function subscribeToComplaints(
 }
 
 /**
- * Adds a new complaint to Firebase Firestore.
- * Does not disturb or overwrite any other documents.
+ * Adds a new complaint to Firebase Firestore & local storage.
  */
 export async function addComplaint(complaint: Complaint): Promise<void> {
+  // Always update local cache immediately for zero latency
+  const current = getStoredComplaints();
+  const updated = [complaint, ...current.filter((c) => c.id !== complaint.id)];
+  saveToLocalCache(updated);
+
   try {
     const docRef = doc(db, COLLECTION_NAME, complaint.id);
     await setDoc(docRef, complaint, { merge: true });
   } catch (error) {
-    console.warn('Could not save complaint directly to Firebase; saved to local cache:', error);
+    console.warn('Could not save complaint directly to Firebase (saved to local cache):', error);
   }
 }
 
 /**
- * Advances or updates complaint status in Firebase Firestore.
+ * Updates complaint status and optional admin remarks in Firebase and local storage.
+ */
+export async function updateComplaintStatusAndRemarks(
+  id: string,
+  newStatus: ComplaintStatus,
+  remarks?: string
+): Promise<Complaint[]> {
+  const current = getStoredComplaints();
+  const nowStr = new Date().toISOString();
+
+  const updated = current.map((c) => {
+    if (c.id === id) {
+      const history: StatusUpdateRecord[] = c.statusUpdates ? [...c.statusUpdates] : [];
+      history.push({
+        status: newStatus,
+        timestamp: nowStr,
+        note: remarks || `Status changed to ${newStatus}`,
+      });
+
+      return {
+        ...c,
+        status: newStatus,
+        adminRemarks: remarks !== undefined ? remarks : c.adminRemarks,
+        resolvedAt: newStatus === 'Resolved' ? nowStr : c.resolvedAt,
+        statusUpdates: history,
+      };
+    }
+    return c;
+  });
+
+  saveToLocalCache(updated);
+
+  try {
+    const docRef = doc(db, COLLECTION_NAME, id);
+    const target = updated.find((c) => c.id === id);
+    if (target) {
+      await updateDoc(docRef, {
+        status: target.status,
+        adminRemarks: target.adminRemarks || '',
+        resolvedAt: target.resolvedAt || null,
+        statusUpdates: target.statusUpdates || [],
+      });
+    }
+  } catch (error) {
+    console.warn('Could not update status in Firebase (updated local cache):', error);
+  }
+
+  return updated;
+}
+
+/**
+ * Legacy status advance helper.
  */
 export async function updateComplaintStatus(
   id: string,
   newStatus: ComplaintStatus,
   resolvedAt?: string
 ): Promise<void> {
-  try {
-    const docRef = doc(db, COLLECTION_NAME, id);
-    const updatePayload: Partial<Complaint> = {
-      status: newStatus,
-    };
-    if (resolvedAt) {
-      updatePayload.resolvedAt = resolvedAt;
-    }
-    await updateDoc(docRef, updatePayload);
-  } catch (error) {
-    console.warn('Could not update status in Firebase; updated local cache:', error);
-  }
+  await updateComplaintStatusAndRemarks(id, newStatus);
 }
 
 /**
@@ -152,6 +194,7 @@ export async function updateComplaintStatus(
  */
 export async function resetDatabaseToSampleComplaints(): Promise<Complaint[]> {
   const samples = generateInitialSampleRecords();
+  saveToLocalCache(samples);
   try {
     for (const record of samples) {
       await setDoc(doc(db, COLLECTION_NAME, record.id), record);
@@ -159,7 +202,5 @@ export async function resetDatabaseToSampleComplaints(): Promise<Complaint[]> {
   } catch (error) {
     console.warn('Could not reset Firebase records; resetting local cache:', error);
   }
-  saveToLocalCache(samples);
   return samples;
 }
-
