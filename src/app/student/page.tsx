@@ -293,7 +293,7 @@ export default function StudentPortalPage() {
             Campus Student Grievance Redressal
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-            Report facility issues across campus hostels, labs, Wi-Fi, or classrooms. Our system automatically prioritizes complaints based on category weight and resolution age.
+            Report facility issues across campus hostels, labs, Wi-Fi, or classrooms. Our campus administration actively reviews and resolves your complaints.
           </p>
 
           {/* Tab Switcher: Register vs Track */}
@@ -474,45 +474,30 @@ export default function StudentPortalPage() {
                     <label className="text-xs font-bold text-slate-700">
                       Complaint Category <span className="text-rose-500">*</span>
                     </label>
-                    <span className="text-[11px] text-slate-500">
-                      Base Weight: <strong>{CATEGORY_WEIGHTS[category]} pts</strong>
-                    </span>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
                     {CATEGORIES.map((cat) => {
                       const Icon = getCategoryIcon(cat);
                       const isSelected = category === cat;
-                      const weight = CATEGORY_WEIGHTS[cat];
 
                       return (
                         <button
                           key={cat}
                           type="button"
                           onClick={() => setCategory(cat)}
-                          className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all ${
+                          className={`p-3.5 rounded-2xl border text-center flex flex-col items-center justify-center gap-2 transition-all cursor-pointer ${
                             isSelected
                               ? 'border-[#007A78] bg-[#E6FFFA]/50 shadow-xs ring-2 ring-[#007A78]/20'
                               : 'border-slate-200/90 bg-slate-50/50 hover:bg-slate-100 hover:border-slate-300'
                           }`}
                         >
-                          <div className="flex items-center justify-between w-full mb-1">
-                            <div
-                              className={`w-7 h-7 rounded-lg flex items-center justify-center ${
-                                isSelected ? 'bg-[#007A78] text-white' : 'bg-slate-200/70 text-slate-600'
-                              }`}
-                            >
-                              <Icon className="w-4 h-4" />
-                            </div>
-                            <span
-                              className={`text-[10px] font-bold px-1.5 py-0.2 rounded-md ${
-                                isSelected
-                                  ? 'bg-[#007A78] text-white'
-                                  : 'bg-slate-200 text-slate-600'
-                              }`}
-                            >
-                              +{weight}
-                            </span>
+                          <div
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                              isSelected ? 'bg-[#007A78] text-white' : 'bg-slate-200/70 text-slate-600'
+                            }`}
+                          >
+                            <Icon className="w-5 h-5" />
                           </div>
                           <span
                             className={`text-xs font-bold truncate ${
@@ -673,38 +658,6 @@ export default function StudentPortalPage() {
 
             {/* Right Information Sidebar (4 cols) */}
             <div className="lg:col-span-4 space-y-6">
-              {/* How Prioritization Works */}
-              <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs space-y-3">
-                <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
-                  <Sparkles className="w-4 h-4 text-[#007A78]" />
-                  <h4>How Priority is Calculated</h4>
-                </div>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Every campus issue receives an automated urgency score calculated as:
-                </p>
-                <div className="p-3 bg-[#E6FFFA]/50 border border-[#99F6E4] rounded-xl text-xs font-mono font-bold text-[#007A78] text-center">
-                  Score = Category Weight + floor(Age / 24h)
-                </div>
-                <div className="space-y-1.5 pt-1 text-[11px] text-slate-600">
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span>Laboratory</span>
-                    <strong className="text-slate-800">3 pts (Urgent)</strong>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span>Wi-Fi & Hostel</span>
-                    <strong className="text-slate-800">2 pts (High)</strong>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span>Classroom & Other</span>
-                    <strong className="text-slate-800">1 pt (Standard)</strong>
-                  </div>
-                  <div className="flex justify-between py-1 text-teal-800 font-medium">
-                    <span>Pending &gt; 24h</span>
-                    <strong>+1 pt per day</strong>
-                  </div>
-                </div>
-              </div>
-
               {/* Status Stages Guide */}
               <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs space-y-3">
                 <h4 className="text-sm font-bold text-slate-900">
@@ -898,9 +851,9 @@ export default function StudentPortalPage() {
                   </div>
 
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                    <span className="text-slate-400 text-[11px] block font-medium">Urgency Score</span>
+                    <span className="text-slate-400 text-[11px] block font-medium">Priority Level</span>
                     <strong className="text-[#007A78] text-sm mt-0.5 block">
-                      {trackedComplaint.urgencyScore} pts ({trackedComplaint.urgencyTier})
+                      {trackedComplaint.urgencyTier} Priority
                     </strong>
                   </div>
 
@@ -937,16 +890,6 @@ export default function StudentPortalPage() {
           </div>
         )}
       </main>
-
-      {/* Footer (Strictly Student Portal - NO Admin Link) */}
-      <footer className="border-t border-slate-200 bg-white py-5 mt-10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
-          <p>© 2026 Camp Resolver Campus Grievance Desk • CODE CRACK 3.0</p>
-          <p className="text-[11px] text-slate-400">
-            For urgent facility emergencies, contact your campus warden or control room directly.
-          </p>
-        </div>
-      </footer>
 
       {/* Floating AI Assistant for Students */}
       <ChatbotWidget />
