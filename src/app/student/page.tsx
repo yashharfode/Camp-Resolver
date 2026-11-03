@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Complaint, ComplaintCategory, EvaluatedComplaint } from '@/types/complaint';
 import { CATEGORIES, CATEGORY_WEIGHTS } from '@/utils/constants';
-import { generateNextComplaintId } from '@/utils/storage';
+import { getStoredComplaints, generateNextComplaintId } from '@/utils/storage';
 import { evaluateComplaint, formatAge } from '@/utils/urgency';
 import {
   subscribeToComplaints,
@@ -49,8 +49,13 @@ export default function StudentPortalPage() {
   const [trackedComplaint, setTrackedComplaint] = useState<EvaluatedComplaint | null>(null);
   const [trackSearched, setTrackSearched] = useState(false);
 
-  // Real-time synchronization
+  // Immediate local load + background real-time sync
   useEffect(() => {
+    // 1. Instantly load local cache (0ms delay)
+    const cached = getStoredComplaints();
+    setComplaints(cached);
+
+    // 2. Real-time background sync
     const unsubscribe = subscribeToComplaints((items) => {
       setComplaints(items);
     });
@@ -507,3 +512,4 @@ export default function StudentPortalPage() {
     </div>
   );
 }
+

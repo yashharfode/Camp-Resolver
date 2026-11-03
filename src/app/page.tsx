@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Complaint, ComplaintCategory, EvaluatedComplaint, FilterState } from '@/types/complaint';
-import { generateNextComplaintId } from '@/utils/storage';
+import { getStoredComplaints, generateNextComplaintId } from '@/utils/storage';
 import {
   evaluateComplaint,
   getPriorityQueue,
@@ -17,6 +17,7 @@ import { ComplaintTable } from '@/components/ComplaintTable';
 import { PriorityExplanation } from '@/components/PriorityExplanation';
 import { ComplaintDetailsModal } from '@/components/ComplaintDetailsModal';
 import { ChatbotWidget } from '@/components/ChatbotWidget';
+import { Layers } from 'lucide-react';
 import { STATUS_TRANSITIONS } from '@/utils/constants';
 import {
   subscribeToComplaints,
@@ -41,16 +42,18 @@ export default function DashboardPage() {
     status: 'ALL',
   });
 
-  // Connect to Firebase and listen for real-time updates
+  // Instant local load + background real-time Firebase sync
   useEffect(() => {
+    // 1. Instantly load cached complaints (0ms UI render - zero lag!)
+    const cachedComplaints = getStoredComplaints();
+    setComplaints(cachedComplaints);
+    setIsLoaded(true);
     setCurrentTimestamp(Date.now());
 
-    // Subscribe to Firebase Firestore complaints collection
-    // If documents already exist, they are preserved and never disturbed
+    // 2. Seamlessly sync with Firebase in background without blocking screen
     const unsubscribe = subscribeToComplaints(
       (updatedComplaints) => {
         setComplaints(updatedComplaints);
-        setIsLoaded(true);
       },
       (status) => {
         setConnectionStatus(status);
@@ -198,12 +201,18 @@ export default function DashboardPage() {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-9 h-9 border-3 border-[#6366F1]/30 border-t-[#6366F1] rounded-full animate-spin" />
-          <span className="text-xs font-semibold text-slate-500">
-            Connecting to Firebase & Initializing System...
-          </span>
+      <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-4">
+        <div className="flex flex-col items-center max-w-xs w-full text-center space-y-4 animate-in fade-in zoom-in-95 duration-150">
+          <div className="w-14 h-14 rounded-2xl bg-[#E6FFFA] text-[#007A78] flex items-center justify-center shadow-md shadow-teal-700/10 border border-[#99F6E4]">
+            <Layers className="w-8 h-8 animate-pulse" strokeWidth={2.3} />
+          </div>
+          <div>
+            <h2 className="text-xl font-black text-slate-900 tracking-tight">Grivex</h2>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">Campus Complaint Management System</p>
+          </div>
+          <div className="w-44 h-1.5 bg-slate-200/80 rounded-full overflow-hidden">
+            <div className="h-full bg-[#007A78] rounded-full w-2/3 animate-pulse" />
+          </div>
         </div>
       </div>
     );
