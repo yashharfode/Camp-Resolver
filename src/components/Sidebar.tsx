@@ -10,7 +10,6 @@ import {
   Flame,
   BarChart3,
   Settings,
-  Layers,
   X,
   Sparkles,
   LogOut,
@@ -18,6 +17,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useAdminAuth } from './AdminLoginGuard';
+import { CampResolverLogo } from './CampResolverLogo';
 
 interface SidebarProps {
   activeTab?: string;
@@ -56,12 +56,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <div className="h-full flex flex-col justify-between py-6 px-4 bg-white border-r border-slate-200/80">
       {/* Top: Logo & Nav items */}
       <div>
-        {/* Brand Logo: Camp Resolver with 3 Stacked Layers */}
+        {/* Brand Logo: Camp Resolver (Standalone without background) */}
         <div className="flex items-center justify-between px-2 mb-8">
-          <Link href="/admin" className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-[#007A78] bg-[#E6FFFA] border border-[#99F6E4]">
-              <Layers className="w-6 h-6" strokeWidth={2.3} />
-            </div>
+          <Link href="/admin" className="flex items-center gap-2.5 group">
+            <CampResolverLogo className="w-8 h-8 transition-transform group-hover:scale-105" />
             <div>
               <span className="text-xl font-black tracking-tight text-slate-900 block leading-tight">
                 Camp Resolver

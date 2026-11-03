@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import Link from 'next/link';
-import { Layers, Lock, KeyRound, Eye, EyeOff, ShieldCheck, ArrowRight, AlertCircle, LogOut } from 'lucide-react';
+import { Lock, KeyRound, Eye, EyeOff, ShieldCheck, ArrowRight, AlertCircle, LogOut } from 'lucide-react';
+import { CampResolverLogo } from './CampResolverLogo';
 
 const ADMIN_PASSWORD = '123456';
 const AUTH_KEY = 'camp_admin_auth_v1';
@@ -64,9 +65,7 @@ export const AdminLoginGuard: React.FC<{ children: React.ReactNode }> = ({ child
   if (isChecking) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
-        <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 text-[#007A78] flex items-center justify-center animate-spin">
-          <Layers className="w-5 h-5" />
-        </div>
+        <CampResolverLogo className="w-10 h-10 animate-spin" />
       </div>
     );
   }
@@ -76,9 +75,9 @@ export const AdminLoginGuard: React.FC<{ children: React.ReactNode }> = ({ child
       <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-3xl border border-slate-200/90 shadow-xl p-8 sm:p-10 space-y-6 animate-in fade-in zoom-in-95 duration-200">
           {/* Logo & Header */}
-          <div className="text-center space-y-2">
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-[#E6FFFA] text-[#007A78] flex items-center justify-center border border-[#99F6E4] shadow-md shadow-teal-700/10">
-              <Layers className="w-8 h-8" strokeWidth={2.3} />
+          <div className="text-center space-y-3">
+            <div className="flex justify-center">
+              <CampResolverLogo className="w-14 h-14" />
             </div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">Camp Resolver</h1>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">

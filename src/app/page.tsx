@@ -18,7 +18,7 @@ import { PriorityExplanation } from '@/components/PriorityExplanation';
 import { ComplaintDetailsModal } from '@/components/ComplaintDetailsModal';
 import { ChatbotWidget } from '@/components/ChatbotWidget';
 import { AdminLoginGuard } from '@/components/AdminLoginGuard';
-import { Layers } from 'lucide-react';
+import { CampResolverLogo } from '@/components/CampResolverLogo';
 import { STATUS_TRANSITIONS } from '@/utils/constants';
 import {
   subscribeToComplaints,
@@ -182,8 +182,8 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-4">
         <div className="flex flex-col items-center max-w-xs w-full text-center space-y-4 animate-in fade-in zoom-in-95 duration-150">
-          <div className="w-14 h-14 rounded-2xl bg-[#E6FFFA] text-[#007A78] flex items-center justify-center shadow-md shadow-teal-700/10 border border-[#99F6E4]">
-            <Layers className="w-8 h-8 animate-pulse" strokeWidth={2.3} />
+          <div className="flex justify-center">
+            <CampResolverLogo className="w-12 h-12 animate-pulse" />
           </div>
           <div>
             <h2 className="text-xl font-black text-slate-900 tracking-tight">Camp Resolver</h2>

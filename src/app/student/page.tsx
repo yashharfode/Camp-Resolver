@@ -12,8 +12,8 @@ import {
 import { CategoryBadge } from '@/components/CategoryBadge';
 import { StatusBadge } from '@/components/StatusBadge';
 import { ChatbotWidget } from '@/components/ChatbotWidget';
+import { CampResolverLogo } from '@/components/CampResolverLogo';
 import {
-  Layers,
   Send,
   CheckCircle2,
   AlertCircle,
@@ -257,11 +257,9 @@ export default function StudentPortalPage() {
       {/* Top Navigation Header (Strictly for Students - NO Admin Link) */}
       <header className="bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-2xs">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
-          {/* Logo & Brand */}
+          {/* Logo & Brand (Without background) */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#E6FFFA] text-[#007A78] flex items-center justify-center border border-[#99F6E4] shadow-xs">
-              <Layers className="w-6 h-6" strokeWidth={2.3} />
-            </div>
+            <CampResolverLogo className="w-8 h-8" />
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xl font-black tracking-tight text-slate-900">
