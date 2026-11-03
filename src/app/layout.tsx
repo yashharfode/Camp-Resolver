@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Campus Complaint Management System',
+  title: 'Camp Resolver — Campus Complaint Management System',
   description: 'Centralized student complaint management, dynamic urgency scoring, and admin workflow dashboard.',
 };
 

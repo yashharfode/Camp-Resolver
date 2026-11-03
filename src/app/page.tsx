@@ -207,7 +207,7 @@ export default function DashboardPage() {
             <Layers className="w-8 h-8 animate-pulse" strokeWidth={2.3} />
           </div>
           <div>
-            <h2 className="text-xl font-black text-slate-900 tracking-tight">Grivex</h2>
+            <h2 className="text-xl font-black text-slate-900 tracking-tight">Camp Resolver</h2>
             <p className="text-xs text-slate-500 font-medium mt-0.5">Campus Complaint Management System</p>
           </div>
           <div className="w-44 h-1.5 bg-slate-200/80 rounded-full overflow-hidden">
@@ -305,7 +305,7 @@ export default function DashboardPage() {
         />
       )}
 
-      {/* Grivex AI Assistant Floating Widget */}
+      {/* Camp Resolver AI Assistant Floating Widget */}
       <ChatbotWidget />
     </div>
   );

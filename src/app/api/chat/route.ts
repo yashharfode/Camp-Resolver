@@ -10,7 +10,7 @@ const FALLBACK_MODELS = [
   'google/gemma-4-31b-it:free',
 ];
 
-const SYSTEM_PROMPT = `You are the Grivex Campus Helpdesk Advisor, helping students and faculty navigate campus complaint resolution.
+const SYSTEM_PROMPT = `You are the Camp Resolver Campus Helpdesk Advisor, helping students and faculty navigate campus complaint resolution.
 
 Key Guidelines:
 1. Speak in a warm, natural, professional human tone. Never start with robotic disclaimers like "As an AI language model".
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${apiKey}`,
             'HTTP-Referer': 'https://github.com/yashharfode/Camp-Resolver',
-            'X-Title': 'Grivex Campus Complaint Management',
+            'X-Title': 'Camp Resolver Campus Complaint Management',
           },
           body: JSON.stringify({
             model,

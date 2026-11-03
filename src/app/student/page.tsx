@@ -170,7 +170,7 @@ export default function StudentPortalPage() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xl font-black tracking-tight text-slate-900">
-                  Grivex
+                  Camp Resolver
                 </span>
                 <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#E6FFFA] text-[#007A78] border border-[#99F6E4]">
                   Student Portal
@@ -498,7 +498,7 @@ export default function StudentPortalPage() {
       {/* Footer */}
       <footer className="border-t border-slate-200 bg-white py-5 mt-12">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
-          <p>© 2026 Grivex Campus Complaint Management • CODE CRACK 3.0</p>
+          <p>© 2026 Camp Resolver Campus Complaint Management • CODE CRACK 3.0</p>
           <div className="flex items-center gap-4">
             <Link href="/" className="font-semibold text-[#007A78] hover:underline">
               Go to Admin Dashboard

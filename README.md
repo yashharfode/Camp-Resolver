@@ -1,4 +1,4 @@
-# Grivex — Campus Complaint Management System (CODE CRACK 3.0)
+# Camp Resolver — Campus Complaint Management System (CODE CRACK 3.0)
 
 A high-performance, responsive campus grievance redressal platform engineered for **CODE CRACK 3.0**. The system features real-time dynamic urgency scoring, intelligent priority queueing with strict 3-tier tie-breaking, dual-portal architecture (Dedicated Student Grievance Portal & Administrative Control Desk), zero-auth Firebase Firestore cloud synchronization with offline-first localStorage backup, and an integrated **AI Campus Helpdesk Assistant** powered by a redundant 5-model OpenRouter failover chain.
 
@@ -12,7 +12,7 @@ A high-performance, responsive campus grievance redressal platform engineered fo
 
 ---
 
-## 🤖 Grivex AI Campus Assistant & Multi-Model Redundancy
+## 🤖 Camp Resolver AI Campus Assistant & Multi-Model Redundancy
 
 The application includes an embedded AI Campus Helpdesk Assistant accessible across both the Student Portal and Admin Dashboard. It helps students draft concise, actionable complaints, guides them through campus grievance rules, and explains priority urgency calculations.
 
@@ -136,9 +136,9 @@ All sensitive credentials are protected via `.env.local` and strictly excluded f
 
 ---
 
-## 🎨 Grivex Teal Design System
+## 🎨 Camp Resolver Teal Design System
 
-The visual design follows modern enterprise SaaS ergonomics styled in the approved Grivex brand palette:
+The visual design follows modern enterprise SaaS ergonomics styled in the approved Camp Resolver brand palette:
 - **Primary Accent**: `#007A78` (Deep Campus Teal)
 - **Primary Hover / Focus**: `#005C5A`
 - **Soft Backgrounds**: `#F0FDF4` / `#F8FAFC`
@@ -255,5 +255,5 @@ npm run start
 | **Search, Filtering & Summary** | **20 pts** | Substring search by ID & description, multi-criteria category and status filters, real-time reactive counter updates. |
 | **Priority Logic & Explanation** | **25 pts** | Exact urgency formula $\text{Weight} + \lfloor \text{Age}/24 \rfloor$, strict 3-tier tie-breaking, dedicated interactive formula guide. |
 | **Data Handling & Cloud Sync** | **15 pts** | Dual Firebase Firestore + localStorage persistence, non-destructive database integration, initial seed protection. |
-| **Usability, UX & AI Assistance** | **10 pts** | Modern Teal Grivex design system, dedicated Student (`/student`) and Admin (`/admin`) portals, embedded 5-model AI helpdesk assistant with clean typographic rendering. |
+| **Usability, UX & AI Assistance** | **10 pts** | Modern Teal Camp Resolver design system, dedicated Student (`/student`) and Admin (`/admin`) portals, embedded 5-model AI helpdesk assistant with clean typographic rendering. |
 | **Total** | **100 pts** | **Full Compliance** |

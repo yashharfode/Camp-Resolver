@@ -68,7 +68,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <div className="h-full flex flex-col justify-between py-6 px-4 bg-white border-r border-slate-200/80">
       {/* Top: Logo & Nav items */}
       <div>
-        {/* Brand Logo: Grivex with 3 Stacked Layers */}
+        {/* Brand Logo: Camp Resolver with 3 Stacked Layers */}
         <div className="flex items-center justify-between px-2 mb-8">
           <div className="flex items-center gap-3">
             {/* 3 Stacked Layers Teal Logo */}
@@ -76,7 +76,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <Layers className="w-7 h-7" strokeWidth={2.3} />
             </div>
             <span className="text-2xl font-black tracking-tight text-slate-900">
-              Grivex
+              Camp Resolver
             </span>
           </div>
 

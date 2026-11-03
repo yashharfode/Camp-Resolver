@@ -168,7 +168,7 @@ export const ChatbotWidget: React.FC = () => {
       id: 'welcome',
       role: 'assistant',
       content:
-        'Hello! I am Grivex Campus Assistant, your student and staff grievance helpdesk. How can I help you today? You can ask me how complaint priority is calculated, get troubleshooting tips for Wi-Fi or hostel issues, or let me assist you in drafting your complaint description.',
+        'Hello! I am Camp Resolver Campus Assistant, your student and staff grievance helpdesk. How can I help you today? You can ask me how complaint priority is calculated, get troubleshooting tips for Wi-Fi or hostel issues, or let me assist you in drafting your complaint description.',
       timestamp: 'Just now',
     },
   ]);
@@ -272,7 +272,7 @@ export const ChatbotWidget: React.FC = () => {
         <button
           onClick={() => setIsOpen(true)}
           className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 px-4 py-3 bg-[#007A78] hover:bg-[#0b6664] text-white rounded-full shadow-lg shadow-teal-900/20 transition-all duration-200 hover:scale-105 active:scale-95 group"
-          title="Open Grivex AI Campus Assistant"
+          title="Open Camp Resolver AI Assistant"
         >
           <div className="relative">
             <Sparkles className="w-5 h-5 text-teal-100 group-hover:rotate-12 transition-transform" />
@@ -294,7 +294,7 @@ export const ChatbotWidget: React.FC = () => {
               <div>
                 <div className="flex items-center gap-2">
                   <h4 className="text-sm font-bold text-white leading-tight">
-                    Grivex Campus Assistant
+                    Camp Resolver Assistant
                   </h4>
                   <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-white/20 text-teal-100 uppercase tracking-wider">
                     Online
